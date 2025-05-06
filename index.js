@@ -1,10 +1,19 @@
-import { NativeModules } from "react-native";
+import { NativeModules, Platform } from "react-native";
 import {
   askRuntimePermissionsIfNeeded,
   checkAllPermissions,
   startScanIfPermissionsGranted,
 } from "./permission";
+import PoiMapView, { showPointOnMap, getRouteTo } from "./PoiMapView";
 
+/**
+ * Initialize the Poilabs Navigation SDK
+ * @param {Object} config
+ * @param {string} config.applicationId - Application ID provided by Poilabs
+ * @param {string} config.applicationSecret - Application secret provided by Poilabs
+ * @param {string} config.uniqueId - Unique identifier for your application
+ * @returns {Promise<boolean>} - Whether initialization was successful
+ */
 export async function initNavigationSDK({
   applicationId,
   applicationSecret,
@@ -12,31 +21,57 @@ export async function initNavigationSDK({
 }) {
   if (!applicationId || !applicationSecret || !uniqueId)
     throw new Error("Missing credentials");
+
   await askRuntimePermissionsIfNeeded();
+
   const { PoilabsNavigationModule } = NativeModules;
-  return await PoilabsNavigationModule.initWithAppId(
-    applicationId,
-    applicationSecret,
-    uniqueId
-  );
+
+  if (!PoilabsNavigationModule) {
+    console.error(
+      "PoilabsNavigationModule not found. Make sure native modules are properly linked."
+    );
+    return false;
+  }
+
+  try {
+    return await PoilabsNavigationModule.initWithAppId(
+      applicationId,
+      applicationSecret,
+      uniqueId
+    );
+  } catch (error) {
+    console.error("Error initializing Poilabs Navigation SDK:", error);
+    return false;
+  }
 }
 
+/**
+ * Prepare the SDK for map operations
+ * @returns {Promise<boolean>} - Whether preparation was successful
+ */
 export async function getReadyForStoreMap() {
   const { PoilabsNavigationModule } = NativeModules;
-  return await PoilabsNavigationModule.getReadyForStoreMap();
+
+  if (!PoilabsNavigationModule) {
+    console.error(
+      "PoilabsNavigationModule not found. Make sure native modules are properly linked."
+    );
+    return false;
+  }
+
+  try {
+    return await PoilabsNavigationModule.getReadyForStoreMap();
+  } catch (error) {
+    console.error("Error preparing Poilabs Navigation SDK:", error);
+    return false;
+  }
 }
 
-export async function showPointOnMap(storeIds) {
-  const { PoilabsNavigationModule } = NativeModules;
-  return await PoilabsNavigationModule.showPointOnMap(storeIds);
-}
-
-export async function getRouteTo(storeId) {
-  const { PoilabsNavigationModule } = NativeModules;
-  return await PoilabsNavigationModule.getRouteTo(storeId);
-}
-
+// Export everything
 export {
+  PoiMapView,
+  showPointOnMap,
+  getRouteTo,
   askRuntimePermissionsIfNeeded,
   checkAllPermissions,
   startScanIfPermissionsGranted,

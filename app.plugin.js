@@ -147,6 +147,7 @@ function addIOSPods(config) {
     },
   ]);
 }
+
 function addIOSNativeModules(config) {
   return withDangerousMod(config, [
     "ios",
@@ -161,6 +162,7 @@ function addIOSNativeModules(config) {
         "PoilabsMapManager.m",
         "PoilabsNavigationBridge.h",
         "PoilabsNavigationBridge.m",
+        "PoilabsNavigationModule.m",
       ];
 
       for (const file of files) {
@@ -173,47 +175,113 @@ function addIOSNativeModules(config) {
         fs.writeFileSync(out, content, "utf8");
       }
 
+      // Ensure Swift bridging header exists
+      const bridgingHeaderPath = path.join(destDir, `${projectName}-Bridging-Header.h`);
+      if (!fs.existsSync(bridgingHeaderPath)) {
+        const bridgingHeader = `//
+//  Use this file to import your target's public headers that you would like to expose to Swift.
+//
+#import <React/RCTBridgeModule.h>
+#import <React/RCTViewManager.h>
+`;
+        fs.writeFileSync(bridgingHeaderPath, bridgingHeader, "utf8");
+      }
+
       return modConfig;
     },
   ]);
 }
 
 function addAndroidNativeModules(config) {
-    return withDangerousMod(config, [
-      "android",
-      async (modConfig) => {
-        const root = modConfig.modRequest.projectRoot;
-        const pkgName =
-          config.android?.package || config.android?.packageName || config.slug;
-        const pkgPath = pkgName.replace(/\./g, "/");
-        const dest = path.join(root, "android/app/src/main/java", pkgPath);
-  
-        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-  
-        const templateDir = path.join(__dirname, "templates", "android");
-        const files = [
-          "PoilabsPackage.java",
-          "PoiMapModule.java",
-          "PoiMapViewManager.java",
-          "PoiMapFragment.java",
-        ];
-  
-        for (const file of files) {
-          const src = path.join(templateDir, file);
-          let content = fs.readFileSync(src, "utf8");
-          content = content.replace(/__PACKAGE_NAME__/g, pkgName);
-          fs.writeFileSync(path.join(dest, file), content, "utf8");
+  return withDangerousMod(config, [
+    "android",
+    async (modConfig) => {
+      const root = modConfig.modRequest.projectRoot;
+      const pkgName =
+        config.android?.package || config.android?.packageName || config.slug;
+      const pkgPath = pkgName.replace(/\./g, "/");
+      const dest = path.join(root, "android/app/src/main/java", pkgPath);
+
+      if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+
+      const templateDir = path.join(__dirname, "templates", "android");
+      const files = [
+        "PoilabsPackage.java",
+        "PoiMapModule.java",
+        "PoiMapViewManager.java",
+        "PoiMapFragment.java",
+        "PoilabsNavigationModule.java",
+      ];
+
+      for (const file of files) {
+        const src = path.join(templateDir, file);
+        let content = fs.readFileSync(src, "utf8");
+        content = content.replace(/__PACKAGE_NAME__/g, pkgName);
+        fs.writeFileSync(path.join(dest, file), content, "utf8");
+      }
+
+      // Create layout resource directory if not exists
+      const layoutDir = path.join(root, "android/app/src/main/res/layout");
+      if (!fs.existsSync(layoutDir)) fs.mkdirSync(layoutDir, { recursive: true });
+
+      // Create layout file
+      const layoutPath = path.join(layoutDir, "fragment_poi_map.xml");
+      const layoutContent = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/mapLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+        
+</FrameLayout>`;
+      fs.writeFileSync(layoutPath, layoutContent, "utf8");
+
+      // Update MainApplication.java to register the package
+      const mainAppPath = path.join(dest, "MainApplication.java");
+      if (fs.existsSync(mainAppPath)) {
+        let mainAppContent = fs.readFileSync(mainAppPath, "utf8");
+        
+        // If the package is not already registered
+        if (!mainAppContent.includes("new PoilabsPackage()")) {
+          // Add import
+          if (!mainAppContent.includes(`import ${pkgName}.PoilabsPackage;`)) {
+            const importIndex = mainAppContent.lastIndexOf("import ");
+            const importEndIndex = mainAppContent.indexOf(";", importIndex);
+            mainAppContent = mainAppContent.substring(0, importEndIndex + 1) + 
+                            `\nimport ${pkgName}.PoilabsPackage;` + 
+                            mainAppContent.substring(importEndIndex + 1);
+          }
+          
+          // Add package to getPackages()
+          mainAppContent = mainAppContent.replace(
+            /protected List<ReactPackage> getPackages\(\) \{[\s\S]*?return packages;\s*\}/,
+            (match) => {
+              return match.replace(
+                /return packages;/,
+                "packages.add(new PoilabsPackage());\n        return packages;"
+              );
+            }
+          );
+          
+          fs.writeFileSync(mainAppPath, mainAppContent, "utf8");
         }
-  
-        return modConfig;
-      },
-    ]);
-  }
+      }
+
+      return modConfig;
+    },
+  ]);
+}
 
 const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.0" };
 module.exports = createRunOncePlugin(
-  (config, props) => {
-    config = addProjectRepositories(config, props);
+  (config, props = {}) => {
+    // Ensure default tokens if not provided
+    const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } = props;
+    
+    config = addProjectRepositories(config, { mapboxToken, jitpackToken });
     config = addAppGradleSettings(config);
     config = addAndroidPermissions(config);
     config = addIOSInfoPlist(config);

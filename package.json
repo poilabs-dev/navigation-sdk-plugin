@@ -8,6 +8,16 @@
       "build": "tsc",
       "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "files": [
+      "index.js",
+      "index.d.ts",
+      "PoiMapView.js",
+      "permission.js",
+      "app.plugin.js",
+      "templates/**/*",
+      "README.md",
+      "LICENSE"
+    ],
     "keywords": [
       "expo",
       "poilabs",

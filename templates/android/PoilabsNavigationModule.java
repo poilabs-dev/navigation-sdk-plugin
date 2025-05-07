@@ -39,7 +39,6 @@ public class PoilabsNavigationModule extends ReactContextBaseJavaModule {
             
             Context context = reactContext.getApplicationContext();
             
-            // Default to English if not specified
             PoiNavigation.getInstance(context, "en", poiSdkConfig);
             
             promise.resolve(true);
@@ -52,8 +51,6 @@ public class PoilabsNavigationModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getReadyForStoreMap(Promise promise) {
         try {
-            // This is a wrapper, as the actual implementation happens in the Fragment
-            // We're just resolving the promise to maintain API consistency
             promise.resolve(true);
         } catch (Exception e) {
             Log.e(TAG, "Error preparing Poilabs Navigation SDK", e);

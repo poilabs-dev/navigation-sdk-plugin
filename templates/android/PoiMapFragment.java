@@ -17,7 +17,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-// replace with your view's import
 import com.poilabs.navigation.model.PoiNavigation;
 import com.poilabs.navigation.model.PoiSdkConfig;
 import com.poilabs.navigation.view.fragments.MapFragment;
@@ -85,30 +84,21 @@ public class PoiMapFragment extends Fragment {
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(navigateToStoreReceiver,
                 new IntentFilter("navigate-to-store"));
-        
-        // Call below method if all permissions granted
-        // startNavigation()
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        // do any logic that should happen in an `onPause` method
-        // e.g.: customView.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // do any logic that should happen in an `onResume` method
-        // e.g.: customView.onResume();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // do any logic that should happen in an `onDestroy` method
-        // e.g.: customView.onDestroy();
     }
 
     @Override

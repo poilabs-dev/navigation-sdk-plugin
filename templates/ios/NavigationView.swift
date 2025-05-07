@@ -1,84 +1,80 @@
 import UIKit
 import PoilabsNavigation
 
-class NavigationView: UIView {
-  
-  var currentCarrier: PLNNavigationMapView?
-  
-  @objc var language: NSString = "tr" {
+class NavigationView: UIView, PLNNavigationMapViewDelegate {
+
+  private var mapView: PLNNavigationMapView?
+
+  @objc var applicationId: NSString = "" {
+    didSet {
+      PLNNavigationSettings.sharedInstance().applicationId = applicationId as String
+    }
+  }
+  @objc var applicationSecret: NSString = "" {
+    didSet {
+      PLNNavigationSettings.sharedInstance().applicationSecret = applicationSecret as String
+    }
+  }
+  @objc var uniqueId: NSString = "" {
+    didSet {
+      PLNNavigationSettings.sharedInstance().navigationUniqueIdentifier = uniqueId as String
+    }
+  }
+  @objc var language: NSString = "en" {
     didSet {
       PLNNavigationSettings.sharedInstance().applicationLanguage = language as String
-      if self.currentCarrier != nil {
-        self.currentCarrier?.removeFromSuperview()
-        initMap()
-      }
+      reloadMap()
     }
   }
-  
   @objc var showOnMap: NSString?
   @objc var getRouteTo: NSString?
-  
-  //initWithFrame to init view from code
+
   override init(frame: CGRect) {
-      super.init(frame: frame)
-      initMap()
-  }
-  
-  //initWithCode to init view from xib or storyboard
-  required init?(coder aDecoder: NSCoder) {
-      super.init(coder: aDecoder)
-      initMap()
+    super.init(frame: frame)
+    setupMap()
   }
 
-  func initMap() {
-    NotificationCenter.default.addObserver(self, selector: #selector(showPointOnMap), name: Notification.Name("showPointOnMap"), object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(navigateTo), name: Notification.Name("getRouteTo"), object: nil)
-    
-    
-    PLNNavigationSettings.sharedInstance().mallId = "PLACE_TITLE"
-    PLNNavigationSettings.sharedInstance().applicationId = "APPLICATION_ID"
-    PLNNavigationSettings.sharedInstance().applicationSecret = "APPLICATION_SECRET_KEY"
-	PLNNavigationSettings.sharedInstance().navigationUniqueIdentifier = "UNIQUE_ID"
+  required init?(coder: NSCoder) {
+    super.init(coder: coder)
+    setupMap()
+  }
 
-    PLNavigationManager.sharedInstance()?.getReadyForStoreMap(completionHandler: { (error) in
-      if error == nil {
-          let carrierView = PLNNavigationMapView(frame: CGRect(x: 0, y: 0, width: self.bounds.size.width, height: self.bounds.size.height))
-          carrierView.awakeFromNib()
-          carrierView.delegate = self
-          carrierView.searchBarBaseView.backgroundColor = UIColor.black
-          carrierView.searchCancelButton.setTitleColor(.white, for: .normal)
-          self.currentCarrier = carrierView
-          self.addSubview(carrierView)
-        } else {
-          //show error
-        }
+  private func setupMap() {
+    NotificationCenter.default.addObserver(self, selector: #selector(showPoint(_:)), name: NSNotification.Name("showPoint"), object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(routeTo(_:)), name: NSNotification.Name("routeTo"), object: nil)
+    reloadMap()
+  }
+
+  private func reloadMap() {
+    mapView?.removeFromSuperview()
+    PLNavigationManager.sharedInstance()?.getReadyForStoreMap(completionHandler: { error in
+      guard error == nil else { return }
+      let mv = PLNNavigationMapView(frame: self.bounds)
+      mv.delegate = self
+      self.mapView = mv
+      self.addSubview(mv)
     })
   }
-  
-  override func removeFromSuperview() {
-    self.removeFromSuperview()
-    NotificationCenter.default.removeObserver(self)
-  }
-  
-  @objc func showPointOnMap(_ notification: Notification) {
-    if let storeId = notification.userInfo?["storeId"] as? String {
-      currentCarrier?.getShowonMapPin(storeId)
-    }
-  }
-  
-  @objc func navigateTo(_ notification: Notification) {
-    if let storeId = notification.userInfo?["storeId"] as? String {
-      currentCarrier?.navigateWithStoreId(to: storeId)
-    }
-  }
-}
 
-extension NavigationView: PLNNavigationMapViewDelegate {
+  @objc private func showPoint(_ notification: Notification) {
+    guard let storeId = notification.userInfo?["storeId"] as? String else { return }
+    mapView?.getShowonMapPin(storeId)
+  }
+
+  @objc private func routeTo(_ notification: Notification) {
+    guard let storeId = notification.userInfo?["storeId"] as? String else { return }
+    mapView?.navigateWithStoreId(to: storeId)
+  }
+
   func childsAreReady() {
-    if let storeId = showOnMap {
-      currentCarrier?.getShowonMapPin(storeId as String)
-    } else if let storeId = getRouteTo {
-      currentCarrier?.navigateWithStoreId(to: storeId as String)
+    if let id = showOnMap as String? {
+      mapView?.getShowonMapPin(id)
+    } else if let id = getRouteTo as String? {
+      mapView?.navigateWithStoreId(to: id)
     }
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
   }
 }

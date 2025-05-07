@@ -27,7 +27,6 @@ function addProjectRepositories(config, { mapboxToken, jitpackToken }) {
 
       const repoBlock = `allprojects {
     repositories {
-      // Mapbox
       maven {
         url 'https://api.mapbox.com/downloads/v2/releases/maven'
         authentication { basic(BasicAuthentication) }
@@ -36,15 +35,11 @@ function addProjectRepositories(config, { mapboxToken, jitpackToken }) {
           password = '${mapboxToken}'
         }
       }
-      // JitPack
       maven {
         url "https://jitpack.io"
         credentials { username = '${jitpackToken}' }
       }
-      // OSS snapshots
-      maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
-    }
-  }`;
+      maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }`;
       if (!text.includes("api.mapbox.com/downloads")) {
         text = text.replace(/allprojects[\s\S]*?\}/, repoBlock);
         fs.writeFileSync(projBuild, text, "utf8");
@@ -154,7 +149,16 @@ function addIOSNativeModules(config) {
     async (modConfig) => {
       const root = modConfig.modRequest.projectRoot;
       const projectName = modConfig.modRequest.projectName;
-      const destDir = path.join(root, "ios", projectName);
+
+      const moduleDir = path.join(
+        root,
+        "ios",
+        projectName,
+        "PoilabsNavigationModule"
+      );
+      if (!fs.existsSync(moduleDir)) {
+        fs.mkdirSync(moduleDir, { recursive: true });
+      }
 
       const srcDir = path.join(__dirname, "templates", "ios");
       const files = [
@@ -167,7 +171,7 @@ function addIOSNativeModules(config) {
 
       for (const file of files) {
         const src = path.join(srcDir, file);
-        const out = path.join(destDir, file);
+        const out = path.join(moduleDir, file);
 
         let content = fs.readFileSync(src, "utf8");
         content = content.replace(/__PROJECT_NAME__/g, projectName);
@@ -175,16 +179,32 @@ function addIOSNativeModules(config) {
         fs.writeFileSync(out, content, "utf8");
       }
 
-      // Ensure Swift bridging header exists
-      const bridgingHeaderPath = path.join(destDir, `${projectName}-Bridging-Header.h`);
+      const bridgingHeaderPath = path.join(
+        root,
+        "ios",
+        projectName,
+        `${projectName}-Bridging-Header.h`
+      );
+
       if (!fs.existsSync(bridgingHeaderPath)) {
-        const bridgingHeader = `//
-//  Use this file to import your target's public headers that you would like to expose to Swift.
-//
+        const bridgingHeader = `
 #import <React/RCTBridgeModule.h>
 #import <React/RCTViewManager.h>
 `;
         fs.writeFileSync(bridgingHeaderPath, bridgingHeader, "utf8");
+      }
+
+      const xcodeProjectPath = path.join(
+        root,
+        "ios",
+        `${projectName}.xcodeproj`,
+        "project.pbxproj"
+      );
+
+      if (fs.existsSync(xcodeProjectPath)) {
+        console.log(
+          `Files added to ${moduleDir}. You may need to add them to your Xcode project manually.`
+        );
       }
 
       return modConfig;
@@ -220,11 +240,10 @@ function addAndroidNativeModules(config) {
         fs.writeFileSync(path.join(dest, file), content, "utf8");
       }
 
-      // Create layout resource directory if not exists
       const layoutDir = path.join(root, "android/app/src/main/res/layout");
-      if (!fs.existsSync(layoutDir)) fs.mkdirSync(layoutDir, { recursive: true });
+      if (!fs.existsSync(layoutDir))
+        fs.mkdirSync(layoutDir, { recursive: true });
 
-      // Create layout file
       const layoutPath = path.join(layoutDir, "fragment_poi_map.xml");
       const layoutContent = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -239,23 +258,20 @@ function addAndroidNativeModules(config) {
 </FrameLayout>`;
       fs.writeFileSync(layoutPath, layoutContent, "utf8");
 
-      // Update MainApplication.java to register the package
       const mainAppPath = path.join(dest, "MainApplication.java");
       if (fs.existsSync(mainAppPath)) {
         let mainAppContent = fs.readFileSync(mainAppPath, "utf8");
-        
-        // If the package is not already registered
+
         if (!mainAppContent.includes("new PoilabsPackage()")) {
-          // Add import
           if (!mainAppContent.includes(`import ${pkgName}.PoilabsPackage;`)) {
             const importIndex = mainAppContent.lastIndexOf("import ");
             const importEndIndex = mainAppContent.indexOf(";", importIndex);
-            mainAppContent = mainAppContent.substring(0, importEndIndex + 1) + 
-                            `\nimport ${pkgName}.PoilabsPackage;` + 
-                            mainAppContent.substring(importEndIndex + 1);
+            mainAppContent =
+              mainAppContent.substring(0, importEndIndex + 1) +
+              `\nimport ${pkgName}.PoilabsPackage;` +
+              mainAppContent.substring(importEndIndex + 1);
           }
-          
-          // Add package to getPackages()
+
           mainAppContent = mainAppContent.replace(
             /protected List<ReactPackage> getPackages\(\) \{[\s\S]*?return packages;\s*\}/,
             (match) => {
@@ -265,7 +281,7 @@ function addAndroidNativeModules(config) {
               );
             }
           );
-          
+
           fs.writeFileSync(mainAppPath, mainAppContent, "utf8");
         }
       }
@@ -275,12 +291,12 @@ function addAndroidNativeModules(config) {
   ]);
 }
 
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.0" };
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.2" };
 module.exports = createRunOncePlugin(
   (config, props = {}) => {
-    // Ensure default tokens if not provided
-    const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } = props;
-    
+    const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } =
+      props;
+
     config = addProjectRepositories(config, { mapboxToken, jitpackToken });
     config = addAppGradleSettings(config);
     config = addAndroidPermissions(config);

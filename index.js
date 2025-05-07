@@ -67,7 +67,6 @@ export async function getReadyForStoreMap() {
   }
 }
 
-// Export everything
 export {
   PoiMapView,
   showPointOnMap,

@@ -74,7 +74,6 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
 
     private void createFragment(FrameLayout root, int reactViewId) {
         ViewGroup parent = (ViewGroup) root.findViewById(reactViewId);
-        // continuously layout children so fragment fills the view
         Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
             @Override
             public void doFrame(long frameTimeNanos) {
@@ -91,7 +90,6 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
             }
         });
 
-        // create & mount the navigation fragment
         PoiMapFragment fragment = PoiMapFragment.newInstance(
           language, showOnMapStoreId, getRouteStoreId
         );

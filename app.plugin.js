@@ -162,6 +162,7 @@ function addIOSNativeModules(config) {
 
       const srcDir = path.join(__dirname, "templates", "ios");
       const files = [
+        "NavigationView.h",
         "NavigationView.swift",
         "PoilabsMapManager.m",
         "PoilabsNavigationBridge.h",
@@ -291,7 +292,7 @@ function addAndroidNativeModules(config) {
   ]);
 }
 
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.4" };
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.5" };
 module.exports = createRunOncePlugin(
   (config, props = {}) => {
     const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } =

@@ -6,14 +6,6 @@ import {
 } from "./permission";
 import PoiMapView, { showPointOnMap, getRouteTo } from "./PoiMapView";
 
-/**
- * Initialize the Poilabs Navigation SDK
- * @param {Object} config
- * @param {string} config.applicationId - Application ID provided by Poilabs
- * @param {string} config.applicationSecret - Application secret provided by Poilabs
- * @param {string} config.uniqueId - Unique identifier for your application
- * @returns {Promise<boolean>} - Whether initialization was successful
- */
 export async function initNavigationSDK({
   applicationId,
   applicationSecret,
@@ -45,10 +37,6 @@ export async function initNavigationSDK({
   }
 }
 
-/**
- * Prepare the SDK for map operations
- * @returns {Promise<boolean>} - Whether preparation was successful
- */
 export async function getReadyForStoreMap() {
   const { PoilabsNavigationModule } = NativeModules;
 

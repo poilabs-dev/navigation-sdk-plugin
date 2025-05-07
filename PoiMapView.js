@@ -6,7 +6,7 @@ const NativeMap = Platform.select({
   android: requireNativeComponent('PoiMapViewManager'),
 });
 
-export default function PoiMapView({
+const PoiMapView = ({
   applicationId,
   applicationSecret,
   uniqueId,
@@ -15,7 +15,7 @@ export default function PoiMapView({
   getRouteTo,
   style,
   ...rest
-}) {
+}) => {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -23,6 +23,7 @@ export default function PoiMapView({
       const id = findNodeHandle(ref.current);
       UIManager.dispatchViewManagerCommand(
         id,
+        // @ts-ignore
         UIManager.PoiMapViewManager.Commands.create.toString(),
         [id]
       );
@@ -42,4 +43,6 @@ export default function PoiMapView({
       {...rest}
     />
   );
-}
+};
+
+export default PoiMapView;

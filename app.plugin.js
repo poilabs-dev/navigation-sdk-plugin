@@ -291,7 +291,7 @@ function addAndroidNativeModules(config) {
   ]);
 }
 
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.2" };
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.4" };
 module.exports = createRunOncePlugin(
   (config, props = {}) => {
     const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } =

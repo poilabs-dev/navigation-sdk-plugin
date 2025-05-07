@@ -1,5 +1,5 @@
 #import <React/RCTViewManager.h>
-#import "YourProjectName-Swift.h"
+#import "NavigationView.h"
 
 @interface PoilabsMapManager : RCTViewManager
 @end
@@ -16,7 +16,7 @@ RCT_EXPORT_VIEW_PROPERTY(showOnMap, NSString)
 RCT_EXPORT_VIEW_PROPERTY(getRouteTo, NSString)
 
 - (UIView *)view {
-  return [NavigationView new];
+  return [[NavigationView alloc] initWithFrame:CGRectZero];
 }
 
 @end

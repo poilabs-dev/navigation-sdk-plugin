@@ -1,6 +1,6 @@
 {
     "name": "@poilabs-dev/navigation-sdk-plugin",
-    "version": "1.0.5",
+    "version": "1.0.8",
     "description": "Expo plugin for Poilabs Navigation SDK integration",
     "main": "index.js",
     "types": "index.d.ts",
@@ -41,7 +41,8 @@
     "peerDependencies": {
       "expo": ">=44.0.0",
       "react": "*",
-      "react-native": "*"
+      "react-native": "*",
+      "expo-location": ">=15.0.0"
     },
     "devDependencies": {
       "@types/react": "^18.0.0",

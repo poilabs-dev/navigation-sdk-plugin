@@ -1,16 +1,39 @@
-import React, { useEffect, useRef } from 'react';
-import { requireNativeComponent, UIManager, findNodeHandle, Platform } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import {
+  requireNativeComponent,
+  UIManager,
+  findNodeHandle,
+  Platform,
+  View,
+  Alert,
+} from "react-native";
 
-const NativeMap = Platform.select({
-  ios: requireNativeComponent('PoilabsNavigationMap'),
-  android: requireNativeComponent('PoiMapViewManager'),
-});
+let NativeMap;
+
+if (Platform.OS === "android") {
+  try {
+    NativeMap = requireNativeComponent("PoiMapViewManager");
+  } catch (e) {
+    console.warn("❌ Android bileşeni yüklenemedi: PoiMapViewManager", e);
+    NativeMap = View;
+  }
+} else if (Platform.OS === "ios") {
+  try {
+    NativeMap = requireNativeComponent("PoilabsNavigationMap");
+  } catch (e) {
+    console.warn("❌ iOS bileşeni yüklenemedi: PoilabsNavigationMap", e);
+    NativeMap = View;
+  }
+} else {
+  console.warn("❌ Desteklenmeyen platform:", Platform.OS);
+  NativeMap = View;
+}
 
 const PoiMapView = ({
   applicationId,
   applicationSecret,
   uniqueId,
-  language = 'en',
+  language = "en",
   showOnMap,
   getRouteTo,
   style,
@@ -19,7 +42,10 @@ const PoiMapView = ({
   const ref = useRef(null);
 
   useEffect(() => {
-    if (Platform.OS === 'android') {
+    if (
+      Platform.OS === "android" &&
+      UIManager.getViewManagerConfig("PoiMapViewManager")
+    ) {
       const id = findNodeHandle(ref.current);
       UIManager.dispatchViewManagerCommand(
         id,

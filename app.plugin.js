@@ -84,7 +84,11 @@ function addAppGradleSettings(config) {
         text = text.replace(
           /dependencies \{/,
           (match) =>
-            `${match}\n    implementation 'com.github.poiteam:Android-Navigation-SDK:4.4.1'`
+            `${match}\n    implementation ('com.github.poiteam:Android-Navigation-SDK:4.4.1') {
+              exclude group: 'com.android.support', module: 'support-compat'
+              exclude group: 'com.android.support', module: 'support-media-compat'
+              exclude group: 'com.android.support'
+            }`
         );
       }
 
@@ -238,6 +242,13 @@ function addAndroidNativeModules(config) {
         const src = path.join(templateDir, file);
         let content = fs.readFileSync(src, "utf8");
         content = content.replace(/__PACKAGE_NAME__/g, pkgName);
+        if (file === "PoilabsPackage.java" && !content.includes("PoiMapModule")) {
+          content =
+            `import ${pkgName}.PoiMapModule;\n` +
+            `import ${pkgName}.PoiMapViewManager;\n` +
+            content;
+        }
+    
         fs.writeFileSync(path.join(dest, file), content, "utf8");
       }
 
@@ -292,7 +303,7 @@ function addAndroidNativeModules(config) {
   ]);
 }
 
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.5" };
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.8" };
 module.exports = createRunOncePlugin(
   (config, props = {}) => {
     const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } =

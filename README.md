@@ -1,26 +1,22 @@
 # Poilabs Navigation SDK Plugin
 
-An Expo plugin and React Native module for integrating the Poilabs Navigation SDK for indoor navigation in your app.
+A React Native and Expo plugin for integrating Poilabs Navigation SDK with indoor navigation capabilities.
 
-## Features
+## 🚀 Features
 
-- Indoor navigation and mapping
-- User location tracking
-- Points of interest display
-- Route finding
-- Support for both iOS and Android platforms
-- Full TypeScript definitions
-- Easy Expo integration
+- ✅ Indoor navigation and mapping
+- ✅ User location tracking
+- ✅ Points of interest display
+- ✅ Route finding and navigation
+- ✅ iOS and Android support
+- ✅ Full TypeScript support
+- ✅ Easy Expo integration
 
-## Installation
+## 📦 Installation
 
-### Using Expo
+### Installation with Expo
 
-```bash
-npx expo install @poilabs-dev/navigation-sdk-plugin
-```
-
-Then add the plugin to your `app.json` or `app.config.js`:
+Add the plugin to your `app.json` or `app.config.js`:
 
 ```json
 {
@@ -38,24 +34,27 @@ Then add the plugin to your `app.json` or `app.config.js`:
 }
 ```
 
-### Using React Native (without Expo)
+### React Native Installation (without Expo)
 
 ```bash
 npm install @poilabs-dev/navigation-sdk-plugin
 ```
 
-For iOS, add the following to your Podfile:
+#### iOS Configuration
+
+Add to your `ios/Podfile`:
 
 ```ruby
 pod 'PoilabsNavigation'
 ```
 
-For Android, add the repositories in your project-level build.gradle:
+#### Android Configuration
+
+Add repositories to your project-level `android/build.gradle`:
 
 ```gradle
 allprojects {
     repositories {
-        // Mapbox
         maven {
             url 'https://api.mapbox.com/downloads/v2/releases/maven'
             authentication { basic(BasicAuthentication) }
@@ -64,139 +63,130 @@ allprojects {
                 password = 'YOUR_MAPBOX_TOKEN'
             }
         }
-        // JitPack
         maven {
             url "https://jitpack.io"
             credentials { username = 'YOUR_JITPACK_TOKEN' }
         }
-        // OSS snapshots
         maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
     }
 }
 ```
+## 🎯 Usage
 
-And add the dependency in your app-level build.gradle:
-
-```gradle
-dependencies {
-    implementation 'com.github.poiteam:Android-Navigation-SDK:4.4.1'
-}
-```
-
-## Required Permissions
-
-### iOS
-Add these to your Info.plist:
-
-```xml
-<key>MGLMapboxMetricsEnabledSettingShownInApp</key>
-<true/>
-<key>NSLocationWhenInUseUsageDescription</key>
-<string>Needed for indoor navigation</string>
-<key>NSLocationAlwaysUsageDescription</key>
-<string>Needed for background navigation</string>
-<key>NSBluetoothPeripheralUsageDescription</key>
-<string>Bluetooth required for beacon ranging</string>
-<key>NSBluetoothAlwaysUsageDescription</key>
-<string>Bluetooth required for beacon ranging</string>
-```
-
-### Android
-Add these to your AndroidManifest.xml:
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-```
-
-## Usage
-
-### Initialization
+### Initialize SDK
 
 ```javascript
-import { initNavigationSDK, PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
+import {
+  initNavigationSDK,
+  getReadyForStoreMap,
+  askRuntimePermissionsIfNeeded
+} from '@poilabs-dev/navigation-sdk-plugin';
 
-// Initialize the SDK with your credentials
-await initNavigationSDK({
+// Request permissions
+await askRuntimePermissionsIfNeeded();
+
+// Initialize SDK
+const success = await initNavigationSDK({
   applicationId: 'YOUR_APPLICATION_ID',
   applicationSecret: 'YOUR_APPLICATION_SECRET',
   uniqueId: 'YOUR_UNIQUE_IDENTIFIER'
 });
 
-// Request runtime permissions if needed
-import { askRuntimePermissionsIfNeeded } from '@poilabs-dev/navigation-sdk-plugin';
-await askRuntimePermissionsIfNeeded();
-```
-
-### Display the Map
-
-```jsx
-import { PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
-
-function MapScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      <PoiMapView 
-        language="en" 
-        style={{ flex: 1 }} 
-      />
-    </View>
-  );
+if (success) {
+  // Prepare for store map operations
+  await getReadyForStoreMap();
+  console.log('SDK initialized successfully!');
 }
 ```
 
-### Show a Point on the Map
+### Show Points on Map
 
 ```javascript
 import { showPointOnMap } from '@poilabs-dev/navigation-sdk-plugin';
 
-// Show a single point
-showPointOnMap('STORE_ID_1');
+// Show single point
+await showPointOnMap('STORE_ID_1');
 
-// Or show multiple points
-showPointOnMap(['STORE_ID_1', 'STORE_ID_2', 'STORE_ID_3']);
+// Show multiple points
+await showPointOnMap(['STORE_ID_1', 'STORE_ID_2', 'STORE_ID_3']);
 ```
 
-### Get a Route to a Destination
+### Get Route to Destination
 
 ```javascript
 import { getRouteTo } from '@poilabs-dev/navigation-sdk-plugin';
 
 // Navigate to a specific store
-getRouteTo('STORE_ID');
+await getRouteTo('STORE_ID');
 ```
 
-### Display Map with Initial Point or Route
+### Positioning Service
 
-```jsx
-import { PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
+```javascript
+import { startPositioning, stopPositioning } from '@poilabs-dev/navigation-sdk-plugin';
 
-function MapScreen() {
-  return (
-    <View style={{ flex: 1 }}>
-      {/* Show a specific point when map loads */}
-      <PoiMapView 
-        language="en"
-        showOnMap="STORE_ID" 
-        style={{ flex: 1 }} 
-      />
-      
-      {/* Or navigate to a specific point when map loads */}
-      <PoiMapView 
-        language="en"
-        getRouteTo="STORE_ID" 
-        style={{ flex: 1 }} 
-      />
-    </View>
-  );
-}
+// Start positioning
+const started = await startPositioning();
+
+// Stop positioning
+const stopped = await stopPositioning();
 ```
 
-## Getting Credentials
+### Permission Checks
+
+```javascript
+import {
+  checkAllPermissions,
+  startScanIfPermissionsGranted
+} from '@poilabs-dev/navigation-sdk-plugin';
+
+// Check if all permissions are granted
+const hasPermissions = await checkAllPermissions();
+
+// Start scanning if permissions are granted
+const scanStarted = await startScanIfPermissionsGranted();
+```
+
+## 📋 API Reference
+
+### Functions
+
+#### `initNavigationSDK(config: InitConfig): Promise<boolean>`
+Initializes the Poilabs Navigation SDK.
+
+**Parameters:**
+- `config.applicationId`: Application ID provided by Poilabs
+- `config.applicationSecret`: Application secret key
+- `config.uniqueId`: Unique identifier for the application
+
+#### `getReadyForStoreMap(): Promise<boolean>`
+Prepares the SDK for store map operations.
+
+#### `showPointOnMap(storeIds: string | string[]): Promise<void>`
+Shows point(s) on the map.
+
+**Parameters:**
+- `storeIds`: Single store ID or array of store IDs to display
+
+#### `getRouteTo(storeId: string): Promise<void>`
+Gets a route to the specified store.
+
+**Parameters:**
+- `storeId`: Target store ID for navigation
+
+#### `startPositioning(): Promise<boolean>`
+Starts the positioning service.
+
+#### `stopPositioning(): Promise<boolean>`
+Stops the positioning service.
+
+#### `askRuntimePermissionsIfNeeded(): Promise<boolean>`
+Requests required runtime permissions.
+
+#### `checkAllPermissions(): Promise<boolean>`
+Checks if all required permissions are granted.
+
+## 🔑 Getting Credentials
 
 To use this SDK, you need to obtain the following credentials from Poilabs:
 
@@ -206,56 +196,120 @@ To use this SDK, you need to obtain the following credentials from Poilabs:
 4. `MAPBOX_TOKEN`
 5. `JITPACK_TOKEN`
 
-Please contact Poilabs for these credentials.
+Please contact Poilabs support to get these credentials.
 
-## API Reference
+## 🛠️ Development
 
-### Components
+### Minimum Requirements
 
-#### `PoiMapView`
+- **Android**: API Level 24 (Android 7.0), Compile SDK 34
+- **iOS**: iOS 11.0+
+- **React Native**: 0.60+
+- **Expo**: 47.0.0+
 
-React component that displays the indoor map.
+### Troubleshooting
 
-Props:
-- `language`: Language for the map UI ("en" or "tr")
-- `showOnMap`: Store ID to show on the map
-- `getRouteTo`: Store ID to navigate to
-- `style`: Style object for the map container
+#### Android Build Issues
+- Check `compileSdkVersion` and `minSdkVersion` values
+- Ensure MultiDex support is enabled
+- Verify repositories are correctly added
 
-### Functions
+#### iOS Build Issues
+- Check pod installation: `cd ios && pod install`
+- Ensure bridging header file exists
+- Verify Xcode project settings
 
-#### `initNavigationSDK({ applicationId, applicationSecret, uniqueId })`
+#### Common Issues
 
-Initializes the Poilabs Navigation SDK with your credentials.
+**Module not found errors:**
+```bash
+# Clear cache and reinstall
+npx expo install --fix
+# or for React Native
+npx react-native clean
+```
 
-#### `getReadyForStoreMap()`
+**Permission errors:**
+- Ensure all required permissions are added to platform-specific files
+- Test permission flow on physical devices
 
-Prepares the SDK for map operations.
+## 📚 Examples
 
-#### `showPointOnMap(storeIds)`
+### Basic Setup Example
 
-Shows one or more points on the map. Accepts a single store ID or an array of store IDs.
+```javascript
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, Alert } from 'react-native';
+import {
+  initNavigationSDK,
+  getReadyForStoreMap,
+  showPointOnMap,
+  askRuntimePermissionsIfNeeded
+} from '@poilabs-dev/navigation-sdk-plugin';
 
-#### `getRouteTo(storeId)`
+export default function NavigationExample() {
+  const [isReady, setIsReady] = useState(false);
 
-Gets a route to the specified store.
+  useEffect(() => {
+    initializeSDK();
+  }, []);
 
-#### `askRuntimePermissionsIfNeeded()`
+  const initializeSDK = async () => {
+    try {
+      // Request permissions
+      await askRuntimePermissionsIfNeeded();
+      
+      // Initialize SDK
+      const success = await initNavigationSDK({
+        applicationId: 'YOUR_APP_ID',
+        applicationSecret: 'YOUR_SECRET',
+        uniqueId: 'YOUR_UNIQUE_ID'
+      });
 
-Requests location and Bluetooth permissions if needed.
+      if (success) {
+        await getReadyForStoreMap();
+        setIsReady(true);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to initialize SDK');
+    }
+  };
 
-#### `checkAllPermissions()`
+  const showStore = async () => {
+    if (isReady) {
+      await showPointOnMap('STORE_001');
+    }
+  };
 
-Checks if all required permissions are granted.
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
+      <Text>SDK Status: {isReady ? 'Ready' : 'Initializing...'}</Text>
+      <Button 
+        title="Show Store" 
+        onPress={showStore} 
+        disabled={!isReady} 
+      />
+    </View>
+  );
+}
+```
 
-#### `startScanIfPermissionsGranted()`
-
-Starts Bluetooth scanning if permissions are granted.
-
-## License
+## 📄 License
 
 MIT
 
-## Support
+## 🆘 Support
 
-For any issues or questions, please create an issue on GitHub or contact Poilabs support.
+For any issues or questions:
+- Open a GitHub Issue
+- Contact Poilabs support team
+- Check the troubleshooting section above
+
+## 📝 Changelog
+
+### v1.0.9
+- Initial stable release
+- iOS and Android support
+- TypeScript definitions added
+- Expo plugin support
+- Complete API documentation

@@ -5,8 +5,10 @@ import {
   findNodeHandle,
   Platform,
   View,
-  Alert,
+  NativeModules,
 } from "react-native";
+
+const { PoiMapModule } = NativeModules;
 
 let NativeMap;
 
@@ -14,18 +16,18 @@ if (Platform.OS === "android") {
   try {
     NativeMap = requireNativeComponent("PoiMapViewManager");
   } catch (e) {
-    console.warn("❌ Android bileşeni yüklenemedi: PoiMapViewManager", e);
+    console.warn("❌ Android component failed to load: PoiMapViewManager", e);
     NativeMap = View;
   }
 } else if (Platform.OS === "ios") {
   try {
     NativeMap = requireNativeComponent("PoilabsNavigationMap");
   } catch (e) {
-    console.warn("❌ iOS bileşeni yüklenemedi: PoilabsNavigationMap", e);
+    console.warn("❌ iOS component failed to load: PoilabsNavigationMap", e);
     NativeMap = View;
   }
 } else {
-  console.warn("❌ Desteklenmeyen platform:", Platform.OS);
+  console.warn("❌ Unsupported platform:", Platform.OS);
   NativeMap = View;
 }
 
@@ -42,19 +44,36 @@ const PoiMapView = ({
   const ref = useRef(null);
 
   useEffect(() => {
+    if (applicationId && applicationSecret && uniqueId) {
+      PoiMapModule.initNavigationSDK(
+        applicationId,
+        applicationSecret,
+        uniqueId
+      ).catch((err) => console.error("Failed to initialize SDK:", err));
+    }
+
     if (
       Platform.OS === "android" &&
+      UIManager.getViewManagerConfig &&
       UIManager.getViewManagerConfig("PoiMapViewManager")
     ) {
       const id = findNodeHandle(ref.current);
-      UIManager.dispatchViewManagerCommand(
-        id,
-        // @ts-ignore
-        UIManager.PoiMapViewManager.Commands.create.toString(),
-        [id]
-      );
+      if (id) {
+        UIManager.dispatchViewManagerCommand(
+          id,
+          UIManager.getViewManagerConfig(
+            "PoiMapViewManager"
+          ).Commands.create.toString(),
+          [id]
+        );
+      }
     }
-  }, []);
+
+    // Cleanup
+    return () => {
+      // Any cleanup needed when component unmounts
+    };
+  }, [applicationId, applicationSecret, uniqueId]);
 
   return (
     <NativeMap

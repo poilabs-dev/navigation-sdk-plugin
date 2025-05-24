@@ -86,6 +86,8 @@ Our plugin will handle most configuration automatically, but you should verify:
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
+// veya
+// import PoiMapView from '@poilabs-dev/navigation-sdk-plugin';
 
 const MapScreen = () => {
   return (

@@ -1,17 +1,9 @@
 const { createRunOncePlugin } = require("@expo/config-plugins");
-const { withPoilabsVdNavigationAndroid } = require("./plugin/withPoilabsVdNavigationAndroid");
-const { withPoilabsVdNavigationIOS } = require("./plugin/withPoilabsVdNavigationIOS");
+const withPoilabsSDK = require("./plugin");
 
-const withPoilabsVdNavigation = (config, props = {}) => {
-  const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } = props;
-
-  config = withPoilabsVdNavigationAndroid(config, { mapboxToken, jitpackToken });
-  
-  config = withPoilabsVdNavigationIOS(config);
-
-  return config;
-};
-
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.13" };
-
-module.exports = createRunOncePlugin(withPoilabsVdNavigation, pkg.name, pkg.version);
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.19" };
+module.exports = createRunOncePlugin(
+  withPoilabsSDK,
+  pkg.name,
+  pkg.version
+);

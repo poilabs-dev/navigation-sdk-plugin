@@ -4,7 +4,7 @@ import {
   checkAllPermissions,
   startScanIfPermissionsGranted,
 } from "./permission";
-import PoiMapView from "./PoiMapView";
+import PoiMapViewComponent from "./PoiMapView";
 
 const { PoiMapModule } = NativeModules;
 
@@ -135,8 +135,8 @@ export {
   startScanIfPermissionsGranted,
 };
 
-// Export the map view component
-export { PoiMapView };
+// Export the map view component with both named and default export
+export const PoiMapView = PoiMapViewComponent;
 
 // Default export
-export default PoiMapView;
+export default PoiMapViewComponent;

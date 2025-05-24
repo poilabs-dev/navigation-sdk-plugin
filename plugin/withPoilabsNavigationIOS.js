@@ -166,4 +166,4 @@ function withPoilabsNavigationIOS(config) {
   return config;
 }
 
-module.exports = { withPoilabsNavigationIOS };
+module.exports = withPoilabsNavigationIOS;

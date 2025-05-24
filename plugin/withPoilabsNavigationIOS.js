@@ -68,8 +68,8 @@ const {
         // Copy native module files
         const templateDir = path.join(__dirname, "..", "src", "ios");
         const moduleFiles = [
-          "PoilabsVdNavigationModule.h",
-          "PoilabsVdNavigationModule.m"
+          "PoiMapModule.h",
+          "PoiMapModule.m"
         ];
   
         moduleFiles.forEach(file => {

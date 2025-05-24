@@ -22,7 +22,11 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
 
     public static final String REACT_CLASS = "PoiMapViewManager";
     public final int COMMAND_CREATE = 1;
-    private String language;
+    
+    private String applicationId;
+    private String applicationSecret;
+    private String uniqueId;
+    private String language = "en";
     private String showOnMapStoreId;
     private String getRouteStoreId;
 
@@ -76,12 +80,27 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
         }
     }
 
+    @ReactProp(name = "applicationId")
+    public void setApplicationId(FrameLayout view, String value) {
+        applicationId = value;
+    }
+
+    @ReactProp(name = "applicationSecret")
+    public void setApplicationSecret(FrameLayout view, String value) {
+        applicationSecret = value;
+    }
+
+    @ReactProp(name = "uniqueId")
+    public void setUniqueId(FrameLayout view, String value) {
+        uniqueId = value;
+    }
+
     @ReactProp(name = "language")
     public void setLanguage(FrameLayout view, String value) {
         language = value;
     }
 
-    @ReactProp(name = "showPointOnMap")
+    @ReactProp(name = "showOnMap")
     public void setShowPointOnMap(FrameLayout view, String value) {
         showOnMapStoreId = value;
     }
@@ -98,12 +117,22 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
         ViewGroup parentView = (ViewGroup) root.findViewById(reactNativeViewId);
         setupLayout(parentView);
 
-        final PoiMapFragment poiMapFragment = PoiMapFragment.newInstance(language, showOnMapStoreId, getRouteStoreId);
+        final PoiMapFragment poiMapFragment = PoiMapFragment.newInstance(
+            applicationId, 
+            applicationSecret, 
+            uniqueId, 
+            language, 
+            showOnMapStoreId, 
+            getRouteStoreId
+        );
+        
         FragmentActivity activity = (FragmentActivity) reactContext.getCurrentActivity();
-        activity.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(reactNativeViewId, poiMapFragment, String.valueOf(reactNativeViewId))
-                .commit();
+        if (activity != null && !activity.isFinishing()) {
+            activity.getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(reactNativeViewId, poiMapFragment, String.valueOf(reactNativeViewId))
+                    .commit();
+        }
     }
 
     public void setupLayout(ViewGroup view) {

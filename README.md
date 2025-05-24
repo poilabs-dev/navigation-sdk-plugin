@@ -14,9 +14,9 @@ A React Native and Expo plugin for integrating Poilabs Navigation SDK with indoo
 
 ## 📦 Installation
 
-### Installation with Expo
+### Installation with Expo (Recommended)
 
-Add the plugin to your `app.json` or `app.config.js`:
+With Expo, all configuration steps are handled automatically! Just add the plugin to your `app.json` or `app.config.js`:
 
 ```json
 {
@@ -34,44 +34,84 @@ Add the plugin to your `app.json` or `app.config.js`:
 }
 ```
 
+Then run:
+
+```bash
+npx expo install @poilabs-dev/navigation-sdk-plugin
+```
+
+That's it! The plugin will automatically:
+- Add all required permissions to iOS and Android
+- Configure Mapbox repositories
+- Add necessary dependencies
+- Set up all required configuration parameters
+
 ### React Native Installation (without Expo)
+
+If you're not using Expo, you'll need to do some manual configuration:
 
 ```bash
 npm install @poilabs-dev/navigation-sdk-plugin
 ```
 
-#### iOS Configuration
+#### iOS Configuration (Manual Setup)
 
-Add to your `ios/Podfile`:
+Our plugin will handle some configuration automatically, but you'll need to:
 
-```ruby
-pod 'PoilabsNavigation'
+1. Run pod install:
+
+```bash
+cd ios && pod install
 ```
 
-#### Android Configuration
+> **Note**: All required permissions, the `PoilabsNavigation` pod, and other configuration settings are automatically added by the plugin during the build process.
 
-Add repositories to your project-level `android/build.gradle`:
+#### Android Configuration (Manual Setup)
 
-```gradle
-allprojects {
-    repositories {
-        maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication { basic(BasicAuthentication) }
-            credentials {
-                username = 'mapbox'
-                password = 'YOUR_MAPBOX_TOKEN'
-            }
-        }
-        maven {
-            url "https://jitpack.io"
-            credentials { username = 'YOUR_JITPACK_TOKEN' }
-        }
-        maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
-    }
-}
-```
+Our plugin will handle most configuration automatically, but you should verify:
+
+1. Your project-level `android/build.gradle` has the correct repositories 
+2. Your app-level `android/app/build.gradle` has the right settings:
+   - `compileSdkVersion 34` or higher
+   - `minSdkVersion 24` or higher
+   - `multiDexEnabled true`
+
+> **Note**: All required permissions, dependencies, and configurations are automatically added by the plugin during the build process.
+
 ## 🎯 Usage
+
+### Basic Map Display
+
+```jsx
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
+
+const MapScreen = () => {
+  return (
+    <View style={styles.container}>
+      <PoiMapView
+        style={styles.map}
+        applicationId="YOUR_APPLICATION_ID"
+        applicationSecret="YOUR_APPLICATION_SECRET"
+        uniqueId="YOUR_UNIQUE_IDENTIFIER"
+        language="en"
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+});
+
+export default MapScreen;
+```
 
 ### Initialize SDK
 
@@ -147,7 +187,26 @@ const hasPermissions = await checkAllPermissions();
 const scanStarted = await startScanIfPermissionsGranted();
 ```
 
-## 📋 API Reference
+## 📋 Complete Example
+
+See the [Example.js](./Example.js) file for a complete implementation example.
+
+## 📚 API Reference
+
+### Components
+
+#### `PoiMapView`
+
+A React component that displays the indoor map.
+
+**Props:**
+- `applicationId` (string): Application ID provided by Poilabs
+- `applicationSecret` (string): Application secret key
+- `uniqueId` (string): Unique identifier for the application
+- `language` (string, optional): Language for the map UI ("en" or "tr", default: "en")
+- `showOnMap` (string, optional): Store ID to show on map initially
+- `getRouteTo` (string, optional): Store ID to navigate to initially
+- `style` (object, optional): Style object for the map view
 
 ### Functions
 

@@ -4,6 +4,7 @@ import {
   checkAllPermissions,
   startScanIfPermissionsGranted,
 } from "./permission";
+import PoiMapView from "./PoiMapView";
 
 const { PoiMapModule } = NativeModules;
 
@@ -13,6 +14,15 @@ if (!PoiMapModule) {
   );
 }
 
+/**
+ * Initialize the Poilabs Navigation SDK with required credentials
+ * 
+ * @param {Object} config - Configuration object
+ * @param {string} config.applicationId - Application ID provided by Poilabs
+ * @param {string} config.applicationSecret - Application secret key
+ * @param {string} config.uniqueId - Unique identifier for the application
+ * @returns {Promise<boolean>} - Success status
+ */
 export async function initNavigationSDK({
   applicationId,
   applicationSecret,
@@ -25,8 +35,10 @@ export async function initNavigationSDK({
   }
 
   try {
+    // Request permissions first
     await askRuntimePermissionsIfNeeded();
 
+    // Initialize the SDK
     const result = await PoiMapModule.initNavigationSDK(
       applicationId,
       applicationSecret,
@@ -40,6 +52,11 @@ export async function initNavigationSDK({
   }
 }
 
+/**
+ * Prepare the SDK for store map operations
+ * 
+ * @returns {Promise<boolean>} - Success status
+ */
 export async function getReadyForStoreMap() {
   try {
     const result = await PoiMapModule.getReadyForStoreMap();
@@ -50,6 +67,12 @@ export async function getReadyForStoreMap() {
   }
 }
 
+/**
+ * Show one or more points on the map
+ * 
+ * @param {string|string[]} storeIds - Single store ID or array of store IDs to display
+ * @returns {Promise<void>}
+ */
 export async function showPointOnMap(storeIds) {
   try {
     const ids = Array.isArray(storeIds) ? storeIds : [storeIds];
@@ -60,6 +83,12 @@ export async function showPointOnMap(storeIds) {
   }
 }
 
+/**
+ * Get a route to a specific store
+ * 
+ * @param {string} storeId - Target store ID for navigation
+ * @returns {Promise<void>}
+ */
 export async function getRouteTo(storeId) {
   try {
     await PoiMapModule.getRouteTo(storeId);
@@ -69,6 +98,11 @@ export async function getRouteTo(storeId) {
   }
 }
 
+/**
+ * Start the positioning service
+ * 
+ * @returns {Promise<boolean>} - Success status
+ */
 export async function startPositioning() {
   try {
     const result = await PoiMapModule.startPositioning();
@@ -79,6 +113,11 @@ export async function startPositioning() {
   }
 }
 
+/**
+ * Stop the positioning service
+ * 
+ * @returns {Promise<boolean>} - Success status
+ */
 export async function stopPositioning() {
   try {
     const result = await PoiMapModule.stopPositioning();
@@ -89,8 +128,15 @@ export async function stopPositioning() {
   }
 }
 
+// Export permission utilities
 export {
   askRuntimePermissionsIfNeeded,
   checkAllPermissions,
   startScanIfPermissionsGranted,
 };
+
+// Export the map view component
+export { PoiMapView };
+
+// Default export
+export default PoiMapView;

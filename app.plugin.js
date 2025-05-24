@@ -12,6 +12,6 @@ const withPoilabsVdNavigation = (config, props = {}) => {
   return config;
 };
 
-const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.12" };
+const pkg = { name: "@poilabs-dev/navigation-sdk-plugin", version: "1.0.13" };
 
 module.exports = createRunOncePlugin(withPoilabsVdNavigation, pkg.name, pkg.version);

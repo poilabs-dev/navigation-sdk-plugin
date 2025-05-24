@@ -1,7 +1,10 @@
-const { withPoilabsNavigationAndroid } = require('./withPoilabsNavigationAndroid');
-const { withPoilabsNavigationIOS } = require('./withPoilabsNavigationIOS');
+const withPoilabsAndroid = require("./withPoilabsNavigationAndroid");
+const withPoilabsIOS = require("./withPoilabsNavigationIOS");
 
-module.exports = {
-  withPoilabsNavigationAndroid,
-  withPoilabsNavigationIOS,
-};
+function withPoilabsSDK(config, props) {
+  config = withPoilabsAndroid(config, props);
+  config = withPoilabsIOS(config);
+  return config;
+}
+
+module.exports = withPoilabsSDK;

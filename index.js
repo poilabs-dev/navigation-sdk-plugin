@@ -10,4 +10,4 @@ export {
   startScanIfPermissionsGranted,
 } from "./src";
 
-export { default as withPoilabsVdNavigation } from "./app.plugin";
+export { default as withPoilabsNavigation } from "./app.plugin";

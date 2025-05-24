@@ -1,3 +1,16 @@
+import { ComponentType } from 'react';
+import { ViewProps } from 'react-native';
+
+// PoiMapView Component Props
+export interface PoiMapViewProps extends ViewProps {
+  applicationId: string;
+  applicationSecret: string;
+  uniqueId: string;
+  language?: string;
+  showOnMap?: string;
+  getRouteTo?: string;
+}
+
 // SDK Configuration Interface
 export interface InitConfig {
   applicationId: string;
@@ -10,6 +23,10 @@ export interface PluginConfig {
   mapboxToken?: string;
   jitpackToken?: string;
 }
+
+// Component export - both named and default
+export const PoiMapView: ComponentType<PoiMapViewProps>;
+export default PoiMapView;
 
 // Main SDK Functions
 export function initNavigationSDK(config: InitConfig): Promise<boolean>;
@@ -26,9 +43,3 @@ export function startScanIfPermissionsGranted(): Promise<boolean>;
 
 // Plugin Export
 export function withPoilabsVdNavigation(config: any, props?: PluginConfig): any;
-export default withPoilabsVdNavigation;
-
-// Module Declaration
-declare module '@poilabs-dev/navigation-sdk-plugin' {
-  export * from './index';
-}

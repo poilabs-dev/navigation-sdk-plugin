@@ -1,51 +1,53 @@
 {
-    "name": "@poilabs-dev/navigation-sdk-plugin",
-    "version": "1.0.13",
-    "description": "Expo plugin for Poilabs Navigation SDK integration",
-    "main": "index.js",
-    "types": "index.d.ts",
-    "scripts": {
-      "build": "tsc",
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "files": [
-      "index.js",
-      "index.d.ts",
-      "app.plugin.js",
-      "plugin/",
-      "src/",
-      "README.md",
-      "LICENSE"
-    ],
-    "keywords": [
-      "expo",
-      "poilabs",
-      "navigation",
-      "sdk",
-      "indoor",
-      "navigation",
-      "react-native",
-      "plugin"
-    ],
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/poilabs-dev/navigation-sdk-plugin.git"
-    },
-    "author": "Poilabs",
-    "license": "MIT",
-    "bugs": {
-      "url": "https://github.com/poilabs-dev/navigation-sdk-plugin/issues"
-    },
-    "homepage": "https://github.com/poilabs-dev/navigation-sdk-plugin#readme",
-    "peerDependencies": {
-      "expo": ">=44.0.0",
-      "react": "*",
-      "react-native": "*",
-      "expo-location": ">=15.0.0"
-    },
-    "devDependencies": {
-      "@types/react": "^18.0.0",
-      "@types/react-native": "^0.69.0",
-      "typescript": "^4.7.4"
-    }
+  "name": "@poilabs-dev/navigation-sdk-plugin",
+  "version": "1.0.19",
+  "description": "Expo plugin for Poilabs Navigation SDK integration",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "app.plugin.js",
+    "plugin/",
+    "src/",
+    "PoiMapView.js",
+    "permission.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "expo",
+    "poilabs",
+    "navigation",
+    "sdk",
+    "indoor",
+    "navigation",
+    "react-native",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poilabs-dev/navigation-sdk-plugin.git"
+  },
+  "author": "Poilabs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/poilabs-dev/navigation-sdk-plugin/issues"
+  },
+  "homepage": "https://github.com/poilabs-dev/navigation-sdk-plugin#readme",
+  "peerDependencies": {
+    "expo": ">=44.0.0",
+    "react": "*",
+    "react-native": "*",
+    "expo-location": ">=15.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.69.0",
+    "typescript": "^4.7.4"
+  }
 }

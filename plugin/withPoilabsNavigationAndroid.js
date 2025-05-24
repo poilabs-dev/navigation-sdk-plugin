@@ -282,4 +282,4 @@ function withPoilabsNavigationAndroid(config, props = {}) {
   return config;
 }
 
-module.exports = { withPoilabsNavigationAndroid };
+module.exports = withPoilabsNavigationAndroid;

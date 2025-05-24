@@ -2,10 +2,10 @@
 #import <React/RCTLog.h>
 #import <PoilabsNavigation/PoilabsNavigation.h>
 
-@interface PoilabsNavigationModule : NSObject <RCTBridgeModule>
+@interface PoiMapModule : NSObject <RCTBridgeModule>
 @end
 
-@implementation PoilabsNavigationModule
+@implementation PoiMapModule
 
 RCT_EXPORT_MODULE();
 

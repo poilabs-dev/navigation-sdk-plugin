@@ -13,11 +13,11 @@ import com.facebook.react.bridge.ReactMethod;
 import com.poilabs.navigation.model.PoiNavigation;
 import com.poilabs.navigation.model.PoiSdkConfig;
 
-public class PoilabsNavigationModule extends ReactContextBaseJavaModule {
+public class PoiMapModule extends ReactContextBaseJavaModule {
     private static final String TAG = "PoilabsNavigation";
     private final ReactApplicationContext reactContext;
 
-    public PoilabsNavigationModule(ReactApplicationContext reactContext) {
+    public PoiMapModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
     }
@@ -25,7 +25,7 @@ public class PoilabsNavigationModule extends ReactContextBaseJavaModule {
     @NonNull
     @Override
     public String getName() {
-        return "PoilabsNavigationModule";
+        return "PoiMapModule";
     }
 
     @ReactMethod

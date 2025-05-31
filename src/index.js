@@ -1,4 +1,4 @@
-import { NativeModules } from "react-native";
+import { NativeModules, Platform } from "react-native";
 import {
   askRuntimePermissionsIfNeeded,
   checkAllPermissions,
@@ -6,23 +6,16 @@ import {
 } from "./permission";
 import PoiMapViewComponent from "./PoiMapView";
 
-const { PoiMapModule } = NativeModules;
+const ModuleName =
+  Platform.OS === "ios" ? "PoilabsNavigationBridge" : "PoiMapModule";
+const NativeModule = NativeModules[ModuleName];
 
-if (!PoiMapModule) {
+if (!NativeModule) {
   console.error(
-    "PoiMapModule not found. Make sure the native module is properly installed and linked."
+    `${ModuleName} not found. Make sure the native module is properly installed and linked.`
   );
 }
 
-/**
- * Initialize the Poilabs Navigation SDK with required credentials
- * 
- * @param {Object} config - Configuration object
- * @param {string} config.applicationId - Application ID provided by Poilabs
- * @param {string} config.applicationSecret - Application secret key
- * @param {string} config.uniqueId - Unique identifier for the application
- * @returns {Promise<boolean>} - Success status
- */
 export async function initNavigationSDK({
   applicationId,
   applicationSecret,
@@ -35,11 +28,9 @@ export async function initNavigationSDK({
   }
 
   try {
-    // Request permissions first
     await askRuntimePermissionsIfNeeded();
 
-    // Initialize the SDK
-    const result = await PoiMapModule.initNavigationSDK(
+    const result = await NativeModule.initNavigationSDK(
       applicationId,
       applicationSecret,
       uniqueId
@@ -52,14 +43,9 @@ export async function initNavigationSDK({
   }
 }
 
-/**
- * Prepare the SDK for store map operations
- * 
- * @returns {Promise<boolean>} - Success status
- */
 export async function getReadyForStoreMap() {
   try {
-    const result = await PoiMapModule.getReadyForStoreMap();
+    const result = await NativeModule.getReadyForStoreMap();
     return result;
   } catch (error) {
     console.error("Error preparing store map:", error);
@@ -67,45 +53,28 @@ export async function getReadyForStoreMap() {
   }
 }
 
-/**
- * Show one or more points on the map
- * 
- * @param {string|string[]} storeIds - Single store ID or array of store IDs to display
- * @returns {Promise<void>}
- */
 export async function showPointOnMap(storeIds) {
   try {
     const ids = Array.isArray(storeIds) ? storeIds : [storeIds];
-    await PoiMapModule.showPointOnMap(ids);
+    await NativeModule.showPointOnMap(ids);
   } catch (error) {
     console.error("Error showing points on map:", error);
     throw error;
   }
 }
 
-/**
- * Get a route to a specific store
- * 
- * @param {string} storeId - Target store ID for navigation
- * @returns {Promise<void>}
- */
 export async function getRouteTo(storeId) {
   try {
-    await PoiMapModule.getRouteTo(storeId);
+    await NativeModule.getRouteTo(storeId);
   } catch (error) {
     console.error("Error getting route:", error);
     throw error;
   }
 }
 
-/**
- * Start the positioning service
- * 
- * @returns {Promise<boolean>} - Success status
- */
 export async function startPositioning() {
   try {
-    const result = await PoiMapModule.startPositioning();
+    const result = await NativeModule.startPositioning();
     return result;
   } catch (error) {
     console.error("Error starting positioning:", error);
@@ -113,14 +82,9 @@ export async function startPositioning() {
   }
 }
 
-/**
- * Stop the positioning service
- * 
- * @returns {Promise<boolean>} - Success status
- */
 export async function stopPositioning() {
   try {
-    const result = await PoiMapModule.stopPositioning();
+    const result = await NativeModule.stopPositioning();
     return result;
   } catch (error) {
     console.error("Error stopping positioning:", error);
@@ -128,15 +92,12 @@ export async function stopPositioning() {
   }
 }
 
-// Export permission utilities
 export {
   askRuntimePermissionsIfNeeded,
   checkAllPermissions,
   startScanIfPermissionsGranted,
 };
 
-// Export the map view component with both named and default export
 export const PoiMapView = PoiMapViewComponent;
 
-// Default export
 export default PoiMapViewComponent;

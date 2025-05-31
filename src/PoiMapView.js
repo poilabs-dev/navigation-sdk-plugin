@@ -8,7 +8,8 @@ import {
   NativeModules,
 } from "react-native";
 
-const { PoiMapModule } = NativeModules;
+const ModuleName = Platform.OS === "ios" ? "PoilabsNavigationBridge" : "PoiMapModule";
+const NativeModule = NativeModules[ModuleName];
 
 let NativeMap;
 
@@ -45,11 +46,21 @@ const PoiMapView = ({
 
   useEffect(() => {
     if (applicationId && applicationSecret && uniqueId) {
-      PoiMapModule.initNavigationSDK(
-        applicationId,
-        applicationSecret,
-        uniqueId
-      ).catch((err) => console.error("Failed to initialize SDK:", err));
+      if (Platform.OS === "ios") {
+        // iOS için PoilabsNavigationBridge kullan
+        NativeModule.setApplicationConfig(
+          applicationId,
+          applicationSecret,
+          uniqueId
+        );
+      } else {
+        // Android için PoiMapModule kullan
+        NativeModule.initNavigationSDK(
+          applicationId,
+          applicationSecret,
+          uniqueId
+        ).catch((err) => console.error("Failed to initialize SDK:", err));
+      }
     }
 
     if (

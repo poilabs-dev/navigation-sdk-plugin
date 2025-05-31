@@ -269,6 +269,37 @@ function addAndroidNativeModules(config) {
   ]);
 }
 
+function addAndroidProperties(config) {
+  return withDangerousMod(config, [
+    "android",
+    async (modConfig) => {
+      const root = modConfig.modRequest.projectRoot;
+      const propertiesPath = path.join(root, "android/gradle.properties");
+
+      if (!fs.existsSync(propertiesPath)) {
+        console.warn("android/gradle.properties not found, creating it");
+        fs.writeFileSync(propertiesPath, "", "utf8");
+      }
+
+      let content = fs.readFileSync(propertiesPath, "utf8");
+      
+      if (!content.includes("android.enableJetifier=true")) {
+        content += "\nandroid.enableJetifier=true\n";
+        fs.writeFileSync(propertiesPath, content, "utf8");
+        console.log("Added android.enableJetifier=true to gradle.properties");
+      }
+      
+      if (!content.includes("android.useAndroidX=true")) {
+        content += "\nandroid.useAndroidX=true\n";
+        fs.writeFileSync(propertiesPath, content, "utf8");
+        console.log("Added android.useAndroidX=true to gradle.properties");
+      }
+
+      return modConfig;
+    },
+  ]);
+}
+
 function withPoilabsNavigationAndroid(config, props = {}) {
   const { mapboxToken = "MAPBOX_TOKEN", jitpackToken = "JITPACK_TOKEN" } =
     props;
@@ -278,6 +309,7 @@ function withPoilabsNavigationAndroid(config, props = {}) {
   config = addAndroidPermissions(config);
   config = addAndroidResources(config);
   config = addAndroidNativeModules(config);
+  config = addAndroidProperties(config);
 
   return config;
 }

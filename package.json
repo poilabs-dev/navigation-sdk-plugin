@@ -1,6 +1,6 @@
 {
   "name": "@poilabs-dev/navigation-sdk-plugin",
-  "version": "1.0.20",
+  "version": "1.0.22",
   "description": "Expo plugin for Poilabs Navigation SDK integration",
   "main": "index.js",
   "types": "index.d.ts",
@@ -14,8 +14,6 @@
     "app.plugin.js",
     "plugin/",
     "src/",
-    "PoiMapView.js",
-    "permission.js",
     "README.md",
     "LICENSE"
   ],

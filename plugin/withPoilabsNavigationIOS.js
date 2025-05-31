@@ -8,8 +8,6 @@ const IOS_MODULE_FILES = [
     source: "NavigationView.swift",
     destination: "PoiMapModule/NavigationView.swift",
   },
-  { source: "PoiMapModule.h", destination: "PoiMapModule/PoiMapModule.h" },
-  { source: "PoiMapModule.m", destination: "PoiMapModule/PoiMapModule.m" },
   {
     source: "PoilabsMapManager.m",
     destination: "PoiMapModule/PoilabsMapManager.m",
@@ -89,13 +87,11 @@ function addIOSNativeModules(config) {
         fs.mkdirSync(iosDir, { recursive: true });
       }
 
-      // Create PoiMapModule directory
       const moduleDir = path.join(iosDir, "PoiMapModule");
       if (!fs.existsSync(moduleDir)) {
         fs.mkdirSync(moduleDir, { recursive: true });
       }
 
-      // Copy native module files
       const templateDir = path.join(__dirname, "..", "src", "ios");
 
       IOS_MODULE_FILES.forEach((file) => {
@@ -103,7 +99,6 @@ function addIOSNativeModules(config) {
         const destFile = path.join(iosDir, file.destination);
         const destDir = path.dirname(destFile);
 
-        // Ensure destination directory exists
         if (!fs.existsSync(destDir)) {
           fs.mkdirSync(destDir, { recursive: true });
         }
@@ -118,41 +113,31 @@ function addIOSNativeModules(config) {
         }
       });
 
-      // Create or update bridging header
       const bridgingHeaderPath = path.join(
         iosDir,
         `${projectName}-Bridging-Header.h`
       );
       const bridgingHeaderContent = `
-  //
-  //  Use this file to import your target's public headers that you would like to expose to Swift.
-  //
-  
-  #import <React/RCTBridgeModule.h>
-  #import <React/RCTViewManager.h>
-  #import "PoiMapModule/PoiMapModule.h"
-  #import "PoiMapModule/PoilabsNavigationBridge.h"
-  `;
-
-      if (!fs.existsSync(bridgingHeaderPath)) {
-        fs.writeFileSync(bridgingHeaderPath, bridgingHeaderContent, "utf8");
-        console.log(`Created bridging header: ${bridgingHeaderPath}`);
-      } else {
-        // Update existing bridging header if it doesn't include our imports
-        let existingContent = fs.readFileSync(bridgingHeaderPath, "utf8");
-        if (!existingContent.includes("PoiMapModule/PoiMapModule.h")) {
-          existingContent += `\n#import "PoiMapModule/PoiMapModule.h"`;
-          fs.writeFileSync(bridgingHeaderPath, existingContent, "utf8");
-          console.log(`Updated bridging header: ${bridgingHeaderPath}`);
-        }
+      //
+      //  Use this file to import your target's public headers that you would like to expose to Swift.
+      //
+      
+      #import <React/RCTBridgeModule.h>
+      #import <React/RCTViewManager.h>
+      #import "PoiMapModule/PoilabsNavigationBridge.h"
+      `;
+    
+    if (!fs.existsSync(bridgingHeaderPath)) {
+      fs.writeFileSync(bridgingHeaderPath, bridgingHeaderContent, "utf8");
+      console.log(`Created bridging header: ${bridgingHeaderPath}`);
+    } else {
+      let existingContent = fs.readFileSync(bridgingHeaderPath, "utf8");
+      if (!existingContent.includes("PoiMapModule/PoilabsNavigationBridge.h")) {
+        existingContent += `\n#import "PoiMapModule/PoilabsNavigationBridge.h"`;
+        fs.writeFileSync(bridgingHeaderPath, existingContent, "utf8");
+        console.log(`Updated bridging header: ${bridgingHeaderPath}`);
       }
-
-      // Update Xcode project file to add new files
-      console.log(`
-  iOS files added to ${iosDir}/PoiMapModule/
-  You may need to run 'pod install' again and ensure these files are included in your Xcode project.
-  `);
-
+    }
       return modConfig;
     },
   ]);

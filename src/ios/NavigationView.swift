@@ -1,7 +1,8 @@
 import UIKit
 import PoilabsNavigation
 
-@objc class NavigationView: UIView {
+@objc(NavigationView)
+class NavigationView: UIView {
   
   var currentCarrier: PLNNavigationMapView?
   
@@ -33,14 +34,37 @@ import PoilabsNavigation
     }
   }
   
-  @objc var showOnMap: NSString?
-  @objc var getRouteTo: NSString?
+  @objc var showOnMap: NSString? {
+    didSet {
+      if isConfigured && currentCarrier != nil {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+          if let storeId = self.showOnMap {
+            self.currentCarrier?.getShowonMapPin(storeId as String)
+          }
+        }
+      }
+    }
+  }
+  
+  @objc var getRouteTo: NSString? {
+    didSet {
+      if isConfigured && currentCarrier != nil {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+          if let storeId = self.getRouteTo {
+            self.currentCarrier?.navigateWithStoreId(to: storeId as String)
+          }
+        }
+      }
+    }
+  }
   
   private var isConfigured: Bool {
     return !applicationId.isEqual(to: "") && 
            !applicationSecret.isEqual(to: "") && 
            !uniqueId.isEqual(to: "")
   }
+  
+  private var isInitialized = false
   
   //initWithFrame to init view from code
   override init(frame: CGRect) {
@@ -72,28 +96,15 @@ import PoilabsNavigation
     
     NotificationCenter.default.addObserver(
       self, 
-      selector: #selector(handleConfigUpdate), 
-      name: Notification.Name("updateConfig"), 
+      selector: #selector(reInitMap), 
+      name: Notification.Name("reInitMap"), 
       object: nil
     )
   }
   
-  // Handle configuration update from notification
-  @objc func handleConfigUpdate(_ notification: Notification) {
-    if let userInfo = notification.userInfo,
-       let appId = userInfo["applicationId"] as? String,
-       let secretKey = userInfo["secretKey"] as? String,
-       let uniqueId = userInfo["uniqueId"] as? String {
-      
-      self.applicationId = appId as NSString
-      self.applicationSecret = secretKey as NSString
-      self.uniqueId = uniqueId as NSString
-    }
-  }
-  
   // Update SDK configuration
   private func updateConfiguration() {
-    if isConfigured {
+    if isConfigured && !isInitialized {
       initMap()
     }
   }
@@ -117,7 +128,8 @@ import PoilabsNavigation
     PLNNavigationSettings.sharedInstance().applicationLanguage = language as String
 
     PLNavigationManager.sharedInstance()?.getReadyForStoreMap(completionHandler: { (error) in
-      if error == nil {
+      DispatchQueue.main.async {
+        if error == nil {
           let carrierView = PLNNavigationMapView(frame: CGRect(x: 0, y: 0, width: self.bounds.size.width, height: self.bounds.size.height))
           carrierView.awakeFromNib()
           carrierView.delegate = self
@@ -125,21 +137,43 @@ import PoilabsNavigation
           carrierView.searchCancelButton.setTitleColor(.white, for: .normal)
           self.currentCarrier = carrierView
           self.addSubview(carrierView)
+          self.isInitialized = true
+          
+          // Auto layout setup
+          carrierView.translatesAutoresizingMaskIntoConstraints = false
+          NSLayoutConstraint.activate([
+            carrierView.topAnchor.constraint(equalTo: self.topAnchor),
+            carrierView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            carrierView.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            carrierView.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+          ])
           
           // Check if we need to show a point or get a route on initialization
           self.checkInitialActions()
         } else {
           print("Error initializing map: \(String(describing: error))")
         }
+      }
     })
   }
   
   // Check if we need to perform initial actions
   private func checkInitialActions() {
-    if let storeId = showOnMap {
-      currentCarrier?.getShowonMapPin(storeId as String)
-    } else if let storeId = getRouteTo {
-      currentCarrier?.navigateWithStoreId(to: storeId as String)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      if let storeId = self.showOnMap, !storeId.isEqual(to: "") {
+        self.currentCarrier?.getShowonMapPin(storeId as String)
+      } else if let storeId = self.getRouteTo, !storeId.isEqual(to: "") {
+        self.currentCarrier?.navigateWithStoreId(to: storeId as String)
+      }
+    }
+  }
+  
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    
+    // Update carrier view frame when parent view layout changes
+    if let carrier = currentCarrier {
+      carrier.frame = self.bounds
     }
   }
   
@@ -159,10 +193,36 @@ import PoilabsNavigation
       currentCarrier?.navigateWithStoreId(to: storeId)
     }
   }
+  
+  @objc func reInitMap() {
+    NotificationCenter.default.removeObserver(self)
+    if self.currentCarrier != nil {
+      self.currentCarrier?.removeFromSuperview()
+      self.currentCarrier = nil
+      self.isInitialized = false
+      initMap()
+    }
+  }
 }
 
 extension NavigationView: PLNNavigationMapViewDelegate {
   func childsAreReady() {
     checkInitialActions()
+  }
+  
+  func didLocationStatusChange(_ status: PLLocationStatus) {
+    // Handle location status changes if needed
+  }
+  
+  func poilabsNavigationReadyForRouting() {
+    // Ready for routing operations
+  }
+  
+  func poilabsNavigation(didUpdate userLocation: CLLocationCoordinate2D, floorLevel: Int, floorName: String) {
+    // Handle location updates if needed
+  }
+  
+  func didUserVisitPoint(with storeIds: [String]) {
+    // Handle user visit points if needed
   }
 }

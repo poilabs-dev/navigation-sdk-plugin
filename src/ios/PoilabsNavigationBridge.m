@@ -32,17 +32,9 @@ RCT_EXPORT_METHOD(getRouteTo:(NSString *)storeId) {
   });
 }
 
-RCT_EXPORT_METHOD(setApplicationConfig:(NSString *)applicationId 
-                            secretKey:(NSString *)secretKey 
-                             uniqueId:(NSString *)uniqueId) {
+RCT_EXPORT_METHOD(reInitMap) {
   dispatch_async(dispatch_get_main_queue(), ^{
-    // Update the NavigationView configuration
-    NSDictionary* userInfo = @{
-      @"applicationId": applicationId,
-      @"secretKey": secretKey,
-      @"uniqueId": uniqueId
-    };
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"updateConfig" object:self userInfo:userInfo];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"reInitMap" object:self];
   });
 }
 
@@ -116,6 +108,7 @@ RCT_EXPORT_METHOD(stopPositioning:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
         dispatch_async(dispatch_get_main_queue(), ^{
+            // Stop positioning implementation if needed
             resolve(@(YES));
         });
     } @catch (NSException *exception) {
@@ -123,18 +116,14 @@ RCT_EXPORT_METHOD(stopPositioning:(RCTPromiseResolveBlock)resolve
     }
 }
 
-// PoiMapModule arayüzünü implemente eden yöntemler - uyumluluk için
+// Array version for compatibility with Android
 RCT_EXPORT_METHOD(showPointOnMap:(NSArray *)storeIds
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
-    if (!self.isInitialized) {
-        reject(@"NOT_INITIALIZED", @"SDK not initialized", nil);
-        return;
-    }
-    
     @try {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (storeIds.count > 0) {
+                // For iOS, we only show the first store ID for now
                 NSString *storeId = storeIds[0];
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"showPointOnMap" 
                                                                     object:nil 

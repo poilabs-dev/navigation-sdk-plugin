@@ -1,5 +1,5 @@
 #import <React/RCTViewManager.h>
-#import "PoilabsNavigationBridge.h"
+#import "__PROJECT_NAME__-Swift.h"
 
 @interface PoilabsMapManager : RCTViewManager
 @end
@@ -17,6 +17,11 @@ RCT_EXPORT_VIEW_PROPERTY(getRouteTo, NSString)
 - (UIView *)view
 {
   return [[NavigationView alloc] init];
+}
+
++ (BOOL)requiresMainQueueSetup
+{
+  return YES;
 }
 
 @end

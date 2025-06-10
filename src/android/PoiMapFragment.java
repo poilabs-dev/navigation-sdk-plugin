@@ -127,20 +127,20 @@ public class PoiMapFragment extends Fragment {
     }
 
     public static PoiMapFragment newInstance(String applicationId, String applicationSecret, String uniqueId,
-                                            String language, String showOnMapStoreId, String getRouteStoreId) {
-        PoiMapFragment poiMapFragment = new PoiMapFragment();
+                                        String language, String showOnMapStoreId, String getRouteStoreId) {
+    PoiMapFragment poiMapFragment = new PoiMapFragment();
 
-        Bundle args = new Bundle();
-        args.putString("applicationId", applicationId);
-        args.putString("applicationSecret", applicationSecret);
-        args.putString("uniqueId", uniqueId);
-        args.putString("language", language);
-        args.putString("showOnMapStoreId", showOnMapStoreId);
-        args.putString("getRouteStoreId", getRouteStoreId);
-        poiMapFragment.setArguments(args);
+    Bundle args = new Bundle();
+    args.putString("applicationId", applicationId);
+    args.putString("applicationSecret", applicationSecret);
+    args.putString("uniqueId", uniqueId);
+    args.putString("language", language);
+    args.putString("showOnMapStoreId", showOnMapStoreId);
+    args.putString("getRouteStoreId", getRouteStoreId);
+    poiMapFragment.setArguments(args);
 
-        return poiMapFragment;
-    }
+    return poiMapFragment;
+}
 
     private void startNavigation(String language) {
         try {

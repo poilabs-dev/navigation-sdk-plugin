@@ -44,18 +44,40 @@ yarn add @poilabs-dev/navigation-sdk-plugin
 
 #### ⚠️ **iOS Additional Step Required**
 
+#### ⚠️ **iOS Additional Step Required**
+
 Due to file size limitations, you need to manually add the MapboxMobileEvents framework:
 
-1. **Download MapboxMobileEvents.xcframework**
-   - Contact Poilabs support for the framework file
-   - Or download from Mapbox's official releases
+**1. Download MapboxMobileEvents.xcframework**
 
-2. **Add to Xcode Project**
-   - Open your `ios/{ProjectName}.xcworkspace` in Xcode
-   - Drag `MapboxMobileEvents.xcframework` into your project
-   - Select "Copy items if needed"
-   - Add to both your main target and test target
-   - In "Frameworks, Libraries, and Embedded Content" select "Embed & Sign"
+Navigate to your iOS project directory and run:
+
+```bash
+cd ios
+curl -L -o repo.zip https://github.com/poiteam/react-native-ios-poilabs-navigation-integration/archive/refs/heads/main.zip
+unzip -q repo.zip
+cp -R react-native-ios-poilabs-navigation-integration-main/ios/MapboxMobileEvents.xcframework .
+rm -rf react-native-ios-poilabs-navigation-integration-main repo.zip
+cd ..
+```
+
+**2. Add to Xcode Project**
+
+- Open your `ios/{ProjectName}.xcworkspace` in Xcode
+- In Project Navigator, right-click on your project root
+- Select "Add Files to [ProjectName]"
+- Navigate to `ios/MapboxMobileEvents.xcframework` and select it
+- Make sure "Copy items if needed" is checked
+- Click "Add"
+
+**3. Configure Framework in Xcode**
+
+- Select your project in Project Navigator
+- Go to your app target
+- Navigate to "General" tab
+- Scroll down to "Frameworks, Libraries, and Embedded Content" section
+- Find `MapboxMobileEvents.xcframework` in the list
+- Change its setting from "Do Not Embed" to "Embed & Sign"
 
 3. **Run pod install**
    ```bash
@@ -66,7 +88,7 @@ Due to file size limitations, you need to manually add the MapboxMobileEvents fr
 
 1. **Add to Podfile**:
    ```ruby
-   pod 'PoilabsNavigation', '4.4.1'
+   pod 'PoilabsNavigation'
    ```
 
 2. **Add Native Files**:
@@ -171,12 +193,12 @@ Due to file size limitations, you need to manually add the MapboxMobileEvents fr
 
 ```jsx
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import { PoiMapView } from '@poilabs-dev/navigation-sdk-plugin';
 
 const MapScreen = () => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <PoiMapView
         style={styles.map}
         applicationId="YOUR_APPLICATION_ID"
@@ -184,7 +206,7 @@ const MapScreen = () => {
         uniqueId="YOUR_UNIQUE_IDENTIFIER"
         language="en"
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -271,8 +293,14 @@ pod install
 #### Module Resolution Failed
 - Check that JITPACK_TOKEN and MAPBOX_TOKEN are correctly set
 - Verify repositories are added to project-level build.gradle
-- Clean and rebuild: `./gradlew clean`
-
+- Clean and rebuild:
+  ```bash
+  cd android
+  ./gradlew clean
+  cd ..
+  npx expo run:android
+  ```
+  
 #### MultiDex Issues
 - Ensure `multiDexEnabled true` is set
 - Add `implementation 'androidx.multidex:multidx:2.0.1'`
@@ -342,5 +370,3 @@ MIT
 ## 🆘 Support
 
 - 📧 Contact Poilabs support team
-- 🐛 Open a GitHub Issue
-- 📖 Check troubleshooting section above

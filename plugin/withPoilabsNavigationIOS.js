@@ -1,10 +1,7 @@
 const { withDangerousMod, withInfoPlist } = require("@expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
-const https = require("https");
-const { execSync } = require('child_process');
 
-// iOS module files to copy
 const IOS_MODULE_FILES = [
   {
     source: "NavigationView.swift",
@@ -24,27 +21,21 @@ const IOS_MODULE_FILES = [
   },
 ];
 
-// Main iOS plugin function - updated
 function withPoilabsNavigationIOS(config) {
-  console.log("🍎 Configuring iOS for PoilabsNavigation...");
-  
   config = addIOSInfoPlist(config);
   config = addIOSPods(config);
   config = addIOSNativeModules(config);
-  config = addMapboxMobileEventsFramework(config); // 🆕 Newly added
-  
-  console.log("✅ iOS configuration completed!");
-  
+  config = addMapboxMobileEventsFramework(config);
+
   return config;
 }
 
-// Other functions remain the same...
 function addIOSInfoPlist(config) {
   return withInfoPlist(config, (mod) => {
     const plist = mod.modResults;
-    
+
     plist.MGLMapboxMetricsEnabledSettingShownInApp = true;
-    
+
     plist.NSLocationWhenInUseUsageDescription =
       "This app needs location permission for indoor navigation.";
     plist.NSLocationAlwaysAndWhenInUseUsageDescription =
@@ -61,11 +52,11 @@ function addIOSInfoPlist(config) {
     if (!plist.UIBackgroundModes) {
       plist.UIBackgroundModes = [];
     }
-    
+
     if (!plist.UIBackgroundModes.includes("bluetooth-central")) {
       plist.UIBackgroundModes.push("bluetooth-central");
     }
-    
+
     if (!plist.UIBackgroundModes.includes("location")) {
       plist.UIBackgroundModes.push("location");
     }
@@ -99,15 +90,15 @@ function addIOSPods(config) {
       if (!podfileContent.includes("pod 'PoilabsNavigation'")) {
         const targetMatch = podfileContent.match(/target\s+['"].+['"]\s+do/);
         if (targetMatch) {
-          const insertIndex = podfileContent.indexOf(targetMatch[0]) + targetMatch[0].length;
-          podfileContent = 
+          const insertIndex =
+            podfileContent.indexOf(targetMatch[0]) + targetMatch[0].length;
+          podfileContent =
             podfileContent.slice(0, insertIndex) +
             "\n  pod 'PoilabsNavigation'" +
             podfileContent.slice(insertIndex);
         }
-        
+
         fs.writeFileSync(podfilePath, podfileContent, "utf8");
-        console.log("✅ Added PoilabsNavigation pod to Podfile");
       }
 
       return modConfig;
@@ -142,11 +133,11 @@ function addIOSInfoPlist(config) {
     if (!plist.UIBackgroundModes) {
       plist.UIBackgroundModes = [];
     }
-    
+
     if (!plist.UIBackgroundModes.includes("bluetooth-central")) {
       plist.UIBackgroundModes.push("bluetooth-central");
     }
-    
+
     if (!plist.UIBackgroundModes.includes("location")) {
       plist.UIBackgroundModes.push("location");
     }
@@ -182,15 +173,15 @@ function addIOSPods(config) {
       if (!podfileContent.includes("pod 'PoilabsNavigation'")) {
         const targetMatch = podfileContent.match(/target\s+['"].+['"]\s+do/);
         if (targetMatch) {
-          const insertIndex = podfileContent.indexOf(targetMatch[0]) + targetMatch[0].length;
-          podfileContent = 
+          const insertIndex =
+            podfileContent.indexOf(targetMatch[0]) + targetMatch[0].length;
+          podfileContent =
             podfileContent.slice(0, insertIndex) +
             "\n  pod 'PoilabsNavigation', '4.4.1'" +
             podfileContent.slice(insertIndex);
         }
-        
+
         fs.writeFileSync(podfilePath, podfileContent, "utf8");
-        console.log("✅ Added PoilabsNavigation pod to Podfile");
       }
 
       return modConfig;
@@ -221,14 +212,16 @@ function addIOSNativeModules(config) {
           let content = fs.readFileSync(srcFile, "utf8");
           content = content.replace(/__PROJECT_NAME__/g, projectName);
           fs.writeFileSync(destFile, content, "utf8");
-          console.log(`✅ Copied iOS module file: ${file.destination}`);
         } else {
           console.warn(`❌ Source file not found: ${srcFile}`);
         }
       });
 
       // Create or update bridging header
-      const bridgingHeaderPath = path.join(iosDir, `${projectName}-Bridging-Header.h`);
+      const bridgingHeaderPath = path.join(
+        iosDir,
+        `${projectName}-Bridging-Header.h`
+      );
       const bridgingHeaderContent = `//
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
@@ -240,13 +233,11 @@ function addIOSNativeModules(config) {
 
       if (!fs.existsSync(bridgingHeaderPath)) {
         fs.writeFileSync(bridgingHeaderPath, bridgingHeaderContent, "utf8");
-        console.log(`✅ Created bridging header: ${projectName}-Bridging-Header.h`);
       } else {
         let existingContent = fs.readFileSync(bridgingHeaderPath, "utf8");
         if (!existingContent.includes("PoilabsNavigationBridge.h")) {
           existingContent += '\n#import "PoilabsNavigationBridge.h"\n';
           fs.writeFileSync(bridgingHeaderPath, existingContent, "utf8");
-          console.log(`✅ Updated bridging header: ${projectName}-Bridging-Header.h`);
         }
       }
 
@@ -262,7 +253,7 @@ function addMapboxFramework(config) {
       const root = modConfig.modRequest.projectRoot;
       const projectName = modConfig.modRequest.projectName || config.name;
       const iosDir = path.join(root, "ios");
-      
+
       // Create a note file about MapboxMobileEvents requirement
       const noteFilePath = path.join(iosDir, "MAPBOX_FRAMEWORK_REQUIRED.md");
       const noteContent = `# MapboxMobileEvents Framework Requirement
@@ -290,7 +281,6 @@ Generated by @poilabs-dev/navigation-sdk-plugin
 `;
 
       fs.writeFileSync(noteFilePath, noteContent, "utf8");
-      console.log("📝 Created MapboxMobileEvents requirement note");
 
       return modConfig;
     },
@@ -298,15 +288,11 @@ Generated by @poilabs-dev/navigation-sdk-plugin
 }
 
 function withPoilabsNavigationIOS(config) {
-  console.log("🍎 Configuring iOS for PoilabsNavigation...");
-  
   config = addIOSInfoPlist(config);
   config = addIOSPods(config);
   config = addIOSNativeModules(config);
   config = addMapboxFramework(config);
 
-  console.log("✅ iOS configuration completed!");
-  
   return config;
 }
 

@@ -50,24 +50,22 @@ function addProjectRepositories(config, { mapboxToken, jitpackToken }) {
       let text = fs.readFileSync(projBuild, "utf8");
 
       const repoBlock = `allprojects {
-      repositories {
-          google()
-          mavenCentral()
-          maven {
-              url 'https://api.mapbox.com/downloads/v2/releases/maven'
-              authentication {
-                  basic(BasicAuthentication)
-              }
-              credentials {
-                  username = 'mapbox'
-                  password = '${mapboxToken}'
-              }
+    repositories {
+      maven {
+          url 'https://api.mapbox.com/downloads/v2/releases/maven'
+          authentication {
+              basic(BasicAuthentication)
           }
-          maven {
-              url "https://jitpack.io"
-              credentials { username = '${jitpackToken}' }
+          credentials {
+              username = 'mapbox'
+              password = '${mapboxToken}'
           }
-          maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }`;
+      }
+      maven {
+          url "https://jitpack.io"
+          credentials { username = '${jitpackToken}' }
+      }
+      maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }`;
 
       if (!text.includes("api.mapbox.com/downloads")) {
         text = text.replace(
@@ -192,7 +190,6 @@ function addAndroidResources(config) {
 
         if (fs.existsSync(srcFile)) {
           fs.copyFileSync(srcFile, destFile);
-          console.log(`Copied Android resource: ${destFile}`);
         } else {
           console.warn(`Source file not found: ${srcFile}`);
         }
@@ -231,7 +228,6 @@ function addAndroidNativeModules(config) {
           let content = fs.readFileSync(srcFile, "utf8");
           content = content.replace(/__PACKAGE_NAME__/g, packageName);
           fs.writeFileSync(destFile, content, "utf8");
-          console.log(`Copied Android module file: ${destFile}`);
         } else {
           console.warn(`Source file not found: ${srcFile}`);
         }
@@ -259,7 +255,6 @@ function addAndroidNativeModules(config) {
         }
 
         fs.writeFileSync(mainAppPath, content, "utf8");
-        console.log(`Updated MainApplication.java in ${mainAppPath}`);
       } else {
         console.warn(`MainApplication.java not found at ${mainAppPath}`);
       }
@@ -282,17 +277,15 @@ function addAndroidProperties(config) {
       }
 
       let content = fs.readFileSync(propertiesPath, "utf8");
-      
+
       if (!content.includes("android.enableJetifier=true")) {
         content += "\nandroid.enableJetifier=true\n";
         fs.writeFileSync(propertiesPath, content, "utf8");
-        console.log("Added android.enableJetifier=true to gradle.properties");
       }
-      
+
       if (!content.includes("android.useAndroidX=true")) {
         content += "\nandroid.useAndroidX=true\n";
         fs.writeFileSync(propertiesPath, content, "utf8");
-        console.log("Added android.useAndroidX=true to gradle.properties");
       }
 
       return modConfig;

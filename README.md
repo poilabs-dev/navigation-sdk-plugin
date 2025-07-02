@@ -44,7 +44,9 @@ yarn add @poilabs-dev/navigation-sdk-plugin
 
 #### ⚠️ **iOS Additional Step Required**
 
-#### ⚠️ **iOS Additional Step Required**
+```bash
+npx expo prebuild
+```
 
 Due to file size limitations, you need to manually add the MapboxMobileEvents framework:
 
@@ -233,6 +235,7 @@ pod install
   cd ..
   npx expo run:android
   ```
+
 #### MultiDex Issues
 
 - Ensure `multiDexEnabled true` is set

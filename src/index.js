@@ -1,103 +1,110 @@
-import { NativeModules, Platform } from "react-native";
+import React, { useRef, useEffect } from "react";
 import {
-  askRuntimePermissionsIfNeeded,
-  checkAllPermissions,
-  startScanIfPermissionsGranted,
-} from "./permission";
-import PoiMapViewComponent from "./PoiMapView";
+  Platform,
+  UIManager,
+  findNodeHandle,
+  requireNativeComponent,
+  NativeModules,
+} from "react-native";
 
-const ModuleName =
-  Platform.OS === "ios" ? "PoilabsNavigationBridge" : "PoiMapModule";
-const NativeModule = NativeModules[ModuleName];
+const LINKING_ERROR =
+  `The package '@poilabs-dev/navigation-sdk-plugin' doesn't seem to be linked. Make sure: \n\n` +
+  Platform.select({ ios: "- You have run 'pod install'\n", default: "" }) +
+  "- You rebuilt the app after installing the package\n" +
+  "- You are not using Expo managed workflow\n";
 
-if (!NativeModule) {
-  console.error(
-    `${ModuleName} not found. Make sure the native module is properly installed and linked.`
+const PoiMapModule = NativeModules.PoiMapModule
+  ? NativeModules.PoiMapModule
+  : new Proxy(
+      {},
+      {
+        get() {
+          throw new Error(LINKING_ERROR);
+        },
+      }
+    );
+
+const PoiMapViewManager = requireNativeComponent("PoiMapViewManager");
+
+const PoiMapView = React.forwardRef((props, ref) => {
+  const nativeRef = useRef(null);
+
+  useEffect(() => {
+    const viewId = findNodeHandle(nativeRef.current);
+    createFragment(viewId);
+  }, []);
+
+  const createFragment = (viewId) => {
+    UIManager.dispatchViewManagerCommand(
+      viewId,
+      UIManager.getViewManagerConfig(
+        "PoiMapViewManager"
+      ).Commands.create.toString(),
+      [viewId]
+    );
+  };
+
+  return <PoiMapViewManager {...props} ref={nativeRef} />;
+});
+
+PoiMapView.displayName = "PoiMapView";
+
+export function initNavigationSDK(config) {
+  return PoiMapModule.initNavigationSDK(
+    config.applicationId,
+    config.applicationSecret,
+    config.uniqueId
   );
 }
 
-export async function initNavigationSDK({
-  applicationId,
-  applicationSecret,
-  uniqueId,
-}) {
-  if (!applicationId || !applicationSecret || !uniqueId) {
-    throw new Error(
-      "Missing required parameters: applicationId, applicationSecret, uniqueId"
-    );
-  }
-
-  try {
-    await askRuntimePermissionsIfNeeded();
-
-    const result = await NativeModule.initNavigationSDK(
-      applicationId,
-      applicationSecret,
-      uniqueId
-    );
-
-    return result;
-  } catch (error) {
-    console.error("Error initializing Poilabs Navigation SDK:", error);
-    throw error;
-  }
+export function getReadyForStoreMap() {
+  return PoiMapModule.getReadyForStoreMap();
 }
 
-export async function getReadyForStoreMap() {
-  try {
-    const result = await NativeModule.getReadyForStoreMap();
-    return result;
-  } catch (error) {
-    console.error("Error preparing store map:", error);
-    throw error;
-  }
+export function showPointOnMap(storeIds) {
+  const idsArray = Array.isArray(storeIds) ? storeIds : [storeIds];
+  return PoiMapModule.showPointOnMap(idsArray);
 }
 
-export async function showPointOnMap(storeIds) {
-  try {
-    const ids = Array.isArray(storeIds) ? storeIds : [storeIds];
-    await NativeModule.showPointOnMap(ids);
-  } catch (error) {
-    console.error("Error showing points on map:", error);
-    throw error;
-  }
+export function showSinglePointOnMap(storeId) {
+  return PoiMapModule.showSinglePointOnMap(storeId);
 }
 
-export async function getRouteTo(storeId) {
-  try {
-    await NativeModule.getRouteTo(storeId);
-  } catch (error) {
-    console.error("Error getting route:", error);
-    throw error;
-  }
+export function getRouteTo(storeId) {
+  PoiMapModule.getRouteTo(storeId);
 }
 
-export async function startPositioning() {
-  try {
-    const result = await NativeModule.startPositioning();
-    return result;
-  } catch (error) {
-    console.error("Error starting positioning:", error);
-    throw error;
-  }
+export function getRouteToWithPromise(storeId) {
+  return PoiMapModule.getRouteToWithPromise(storeId);
 }
 
-export async function stopPositioning() {
-  try {
-    const result = await NativeModule.stopPositioning();
-    return result;
-  } catch (error) {
-    console.error("Error stopping positioning:", error);
-    throw error;
-  }
+export function startPositioning() {
+  return PoiMapModule.startPositioning();
 }
 
-export {
-  askRuntimePermissionsIfNeeded,
-  checkAllPermissions,
-  startScanIfPermissionsGranted,
-};
+export function stopPositioning() {
+  return PoiMapModule.stopPositioning();
+}
 
-export const PoiMapView = PoiMapViewComponent;
+export function restartMap(language = "en") {
+  PoiMapModule.restartMap(language);
+}
 
-export default PoiMapViewComponent;
+export function askRuntimePermissionsIfNeeded() {
+  if (Platform.OS === "android") {
+    return Promise.resolve(true);
+  }
+
+  return Promise.resolve(true);
+}
+
+export function checkAllPermissions() {
+  return Promise.resolve(true);
+}
+
+export function startScanIfPermissionsGranted() {
+  return Promise.resolve(true);
+}
+
+export { PoiMapView };
+export default PoiMapView;

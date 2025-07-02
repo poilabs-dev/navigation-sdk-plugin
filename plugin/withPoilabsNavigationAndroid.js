@@ -17,7 +17,6 @@ const ANDROID_PERMISSIONS = [
   "android.permission.BLUETOOTH_ADMIN",
 ];
 
-// Android resources to copy
 const ANDROID_RESOURCES = [
   {
     source: "fragment_poi_map.xml",
@@ -25,7 +24,6 @@ const ANDROID_RESOURCES = [
   },
 ];
 
-// Android module files
 const ANDROID_MODULE_FILES = [
   "PoiMapFragment.java",
   "PoiMapModule.java",
@@ -51,30 +49,34 @@ function addProjectRepositories(config, { mapboxToken, jitpackToken }) {
 
       const repoBlock = `allprojects {
     repositories {
-      maven {
-          url 'https://api.mapbox.com/downloads/v2/releases/maven'
-          authentication {
-              basic(BasicAuthentication)
-          }
-          credentials {
-              username = 'mapbox'
-              password = '${mapboxToken}'
-          }
-      }
-      maven {
-          url "https://jitpack.io"
-          credentials { username = '${jitpackToken}' }
-      }
-      maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }`;
+        google()
+        mavenCentral()
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = 'mapbox'
+                password = '${mapboxToken}'
+            }
+        }
+        maven {
+            url "https://jitpack.io"
+            credentials { username = '${jitpackToken}' }
+        }
+        maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+        jcenter() // Eski dependency'ler için
+    }
+}`;
 
-      if (!text.includes("api.mapbox.com/downloads")) {
-        text = text.replace(
-          /allprojects\s*\{[\s\S]*?repositories\s*\{[\s\S]*?\}/,
-          repoBlock
-        );
-        fs.writeFileSync(projBuild, text, "utf8");
+      if (text.includes("allprojects {")) {
+        text = text.replace(/allprojects\s*\{[\s\S]*?\n\}/m, repoBlock);
+      } else {
+        text += "\n" + repoBlock + "\n";
       }
 
+      fs.writeFileSync(projBuild, text, "utf8");
       return modConfig;
     },
   ]);
@@ -96,48 +98,57 @@ function addAppGradleSettings(config) {
 
       let text = fs.readFileSync(appGradle, "utf8");
 
-      // Compile SDK version
       if (!text.includes("compileSdkVersion 34")) {
         text = text.replace(/compileSdkVersion\s*\d+/, "compileSdkVersion 34");
       }
 
-      // Min SDK version
       if (!text.includes("minSdkVersion 24")) {
         text = text.replace(/minSdkVersion\s*\d+/, "minSdkVersion 24");
       }
 
-      // MultiDex
+      if (!text.includes("targetSdkVersion 34")) {
+        text = text.replace(/targetSdkVersion\s*\d+/, "targetSdkVersion 34");
+      }
+
       if (!text.includes("multiDexEnabled true")) {
         text = text.replace(
-          /defaultConfig\s*\{([\s\S]*?)\}/,
-          (match, inner) => {
-            if (!inner.includes("multiDexEnabled true")) {
-              return match.replace(
-                /applicationId [^\n]+/,
-                "$&\n        multiDexEnabled true"
-              );
+          /(defaultConfig\s*\{[\s\S]*?)(\n\s*})/,
+          (match, content, ending) => {
+            if (!content.includes("multiDexEnabled true")) {
+              return content + "\n        multiDexEnabled true" + ending;
             }
             return match;
           }
         );
       }
 
-      // Dependencies
+      const compileOptions = `
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }`;
+
+      if (!text.includes("compileOptions")) {
+        text = text.replace(
+          /(android\s*\{[\s\S]*?)(^\s*})$/m,
+          `$1${compileOptions}\n$2`
+        );
+      }
+
       const dependencies = [
         "implementation 'androidx.multidex:multidex:2.0.1'",
         "implementation 'com.github.poiteam:Android-Navigation-SDK:4.4.1'",
+        "implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'",
+        "implementation 'androidx.fragment:fragment:1.6.2'",
       ];
 
       dependencies.forEach((dep) => {
         if (!text.includes(dep)) {
-          text = text.replace(
-            /dependencies\s*\{/,
-            `dependencies {\n    ${dep}`
-          );
+          text = text.replace(/(dependencies\s*\{)/, `$1\n    ${dep}`);
         }
       });
 
-      fs.writeFileSync(appGradle, text);
+      fs.writeFileSync(appGradle, text, "utf8");
       return modConfig;
     },
   ]);
@@ -174,7 +185,6 @@ function addAndroidResources(config) {
       const root = modConfig.modRequest.projectRoot;
       const resDir = path.join(root, "android/app/src/main/res");
 
-      // Ensure all resource directories exist
       ANDROID_RESOURCES.forEach((resource) => {
         const destDir = path.dirname(path.join(resDir, resource.destination));
         if (!fs.existsSync(destDir)) {
@@ -182,18 +192,25 @@ function addAndroidResources(config) {
         }
       });
 
-      // Copy resource files
-      const templateDir = path.join(__dirname, "..", "src", "android");
-      ANDROID_RESOURCES.forEach((resource) => {
-        const srcFile = path.join(templateDir, resource.source);
-        const destFile = path.join(resDir, resource.destination);
+      const layoutDir = path.join(resDir, "layout");
+      if (!fs.existsSync(layoutDir)) {
+        fs.mkdirSync(layoutDir, { recursive: true });
+      }
 
-        if (fs.existsSync(srcFile)) {
-          fs.copyFileSync(srcFile, destFile);
-        } else {
-          console.warn(`Source file not found: ${srcFile}`);
-        }
-      });
+      const fragmentLayoutContent = `<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/mapLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</FrameLayout>`;
+
+      const fragmentLayoutPath = path.join(layoutDir, "fragment_poi_map.xml");
+      fs.writeFileSync(fragmentLayoutPath, fragmentLayoutContent, "utf8");
 
       return modConfig;
     },
@@ -217,7 +234,6 @@ function addAndroidNativeModules(config) {
         fs.mkdirSync(srcDir, { recursive: true });
       }
 
-      // Copy native modules
       const templateDir = path.join(__dirname, "..", "src", "android");
 
       ANDROID_MODULE_FILES.forEach((file) => {
@@ -233,35 +249,51 @@ function addAndroidNativeModules(config) {
         }
       });
 
-      // Update MainApplication.java
-      const mainAppPath = path.join(srcDir, "MainApplication.java");
-      if (fs.existsSync(mainAppPath)) {
-        let content = fs.readFileSync(mainAppPath, "utf8");
-
-        // Add import
-        if (!content.includes(`import ${packageName}.PoilabsPackage;`)) {
-          content = content.replace(
-            /(import.*?;)(\s*\n\s*public class)/,
-            `$1\nimport ${packageName}.PoilabsPackage;$2`
-          );
-        }
-
-        // Add package to list
-        if (!content.includes("new PoilabsPackage()")) {
-          content = content.replace(
-            /(return packages;)/,
-            `packages.add(new PoilabsPackage());\n        $1`
-          );
-        }
-
-        fs.writeFileSync(mainAppPath, content, "utf8");
-      } else {
-        console.warn(`MainApplication.java not found at ${mainAppPath}`);
-      }
-
       return modConfig;
     },
   ]);
+}
+
+function updateMainApplication(root, packageName) {
+  const findMainApplication = (dir) => {
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const file of files) {
+      if (file.isDirectory()) {
+        const result = findMainApplication(path.join(dir, file.name));
+        if (result) return result;
+      } else if (file.name === "MainApplication.java") {
+        return path.join(dir, file.name);
+      }
+    }
+    return null;
+  };
+
+  const mainAppPath = findMainApplication(
+    path.join(root, "android/app/src/main/java")
+  );
+
+  if (!mainAppPath) {
+    return;
+  }
+
+  let content = fs.readFileSync(mainAppPath, "utf8");
+
+  if (!content.includes(`import ${packageName}.PoilabsPackage;`)) {
+    content = content.replace(
+      /(import.*?;[\s\S]*?)(public class)/,
+      `$1import ${packageName}.PoilabsPackage;\n\n$2`
+    );
+  }
+
+  if (!content.includes("new PoilabsPackage()")) {
+    content = content.replace(
+      /(return packages;)/,
+      `packages.add(new PoilabsPackage());\n        $1`
+    );
+  }
+
+  fs.writeFileSync(mainAppPath, content, "utf8");
 }
 
 function addAndroidProperties(config) {
@@ -278,16 +310,19 @@ function addAndroidProperties(config) {
 
       let content = fs.readFileSync(propertiesPath, "utf8");
 
-      if (!content.includes("android.enableJetifier=true")) {
-        content += "\nandroid.enableJetifier=true\n";
-        fs.writeFileSync(propertiesPath, content, "utf8");
-      }
+      const properties = [
+        "android.enableJetifier=true",
+        "android.useAndroidX=true",
+        "org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m",
+      ];
 
-      if (!content.includes("android.useAndroidX=true")) {
-        content += "\nandroid.useAndroidX=true\n";
-        fs.writeFileSync(propertiesPath, content, "utf8");
-      }
+      properties.forEach((prop) => {
+        if (!content.includes(prop)) {
+          content += `\n${prop}\n`;
+        }
+      });
 
+      fs.writeFileSync(propertiesPath, content, "utf8");
       return modConfig;
     },
   ]);

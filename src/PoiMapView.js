@@ -1,32 +1,30 @@
 import React, { useEffect, useRef } from "react";
 import {
+  findNodeHandle,
+  NativeModules,
+  Platform,
   requireNativeComponent,
   UIManager,
-  findNodeHandle,
-  Platform,
   View,
-  NativeModules,
 } from "react-native";
 
-// Platform-specific module names
 const ModuleName =
   Platform.OS === "ios" ? "PoilabsNavigationBridge" : "PoiMapModule";
 const NativeModule = NativeModules[ModuleName];
 
 let NativeMap;
 
-// Try to load native components with proper error handling
 if (Platform.OS === "android") {
   try {
     NativeMap = requireNativeComponent("PoiMapViewManager");
   } catch (e) {
-    NativeMap = View; // Fallback to regular View
+    NativeMap = View;
   }
 } else if (Platform.OS === "ios") {
   try {
     NativeMap = requireNativeComponent("PoilabsNavigationMap");
   } catch (e) {
-    NativeMap = View; // Fallback to regular View
+    NativeMap = View;
   }
 } else {
   NativeMap = View;
@@ -44,28 +42,29 @@ const PoiMapView = ({
 }) => {
   const ref = useRef(null);
   const initializedRef = useRef(false);
+  const fragmentCreatedRef = useRef(false);
 
   useEffect(() => {
-    // Only initialize once when we have all required props
     if (
       applicationId &&
       applicationSecret &&
       uniqueId &&
       !initializedRef.current
     ) {
+      console.log("Initializing SDK with props");
       initializeSDK();
       initializedRef.current = true;
     }
   }, [applicationId, applicationSecret, uniqueId]);
 
   useEffect(() => {
-    // Handle Android view creation
-    if (Platform.OS === "android" && UIManager.getViewManagerConfig) {
+    if (Platform.OS === "android" && UIManager.getViewManagerConfig && !fragmentCreatedRef.current) {
       const viewManagerConfig =
         UIManager.getViewManagerConfig("PoiMapViewManager");
 
       if (viewManagerConfig && ref.current) {
         const id = findNodeHandle(ref.current);
+        
         if (id && viewManagerConfig.Commands?.create) {
           setTimeout(() => {
             UIManager.dispatchViewManagerCommand(
@@ -73,20 +72,21 @@ const PoiMapView = ({
               viewManagerConfig.Commands.create.toString(),
               [id]
             );
-          }, 100);
+            fragmentCreatedRef.current = true;
+          }, 500);
         }
       }
     }
-  }, []);
+  }, [applicationId, applicationSecret, uniqueId]);
 
   const initializeSDK = async () => {
     if (!NativeModule) {
+      console.warn("Native module not available");
       return;
     }
 
     try {
       if (Platform.OS === "ios") {
-        // iOS initialization
         await NativeModule.initNavigationSDK(
           applicationId,
           applicationSecret,
@@ -98,7 +98,6 @@ const PoiMapView = ({
     }
   };
 
-  // Show a fallback view if native component failed to load
   if (NativeMap === View) {
     return (
       <View

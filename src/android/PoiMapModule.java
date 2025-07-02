@@ -13,6 +13,9 @@ import com.facebook.react.bridge.Promise;
 import java.util.ArrayList;
 
 public class PoiMapModule extends ReactContextBaseJavaModule {
+    
+    private static final String TAG = "PoiMapModule";
+    
     PoiMapModule(ReactApplicationContext context) {
         super(context);
     }
@@ -35,17 +38,22 @@ public class PoiMapModule extends ReactContextBaseJavaModule {
         ReactApplicationContext context = getReactApplicationContext();
 
         Intent intent = new Intent("navigate-to-store");
-
         intent.putExtra("store_id", storeId);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
     @ReactMethod
     public void showPointOnMap(ReadableArray storeIds) {
+        if (storeIds == null) {
+            return;
+        }
+        
         ArrayList<String> storeIdList = new ArrayList<String>();
         for (int i = 0; i < storeIds.size(); i++) {
-            storeIdList.add(storeIds.getString(i));
+            String storeId = storeIds.getString(i);
+            storeIdList.add(storeId);
         }
+        
         ReactApplicationContext context = getReactApplicationContext();
         Intent intent = new Intent("show-on-map");
         intent.putStringArrayListExtra("store_ids", storeIdList);
@@ -56,7 +64,6 @@ public class PoiMapModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void initNavigationSDK(String applicationId, String applicationSecret, String uniqueId, Promise promise) {
         try {
-            // SDK config is hardcoded in fragment, so just resolve
             promise.resolve(true);
         } catch (Exception e) {
             promise.reject("INIT_ERROR", "Failed to initialize SDK: " + e.getMessage(), e);
@@ -100,7 +107,7 @@ public class PoiMapModule extends ReactContextBaseJavaModule {
             Intent intent = new Intent("show-on-map");
             intent.putStringArrayListExtra("store_ids", storeIdList);
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
-
+            
             promise.resolve(null);
         } catch (Exception e) {
             promise.reject("SHOW_POINT_ERROR", "Failed to show point: " + e.getMessage(), e);
@@ -114,6 +121,7 @@ public class PoiMapModule extends ReactContextBaseJavaModule {
             Intent intent = new Intent("navigate-to-store");
             intent.putExtra("store_id", storeId);
             LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+            
             promise.resolve(null);
         } catch (Exception e) {
             promise.reject("ROUTE_ERROR", "Failed to get route: " + e.getMessage(), e);

@@ -17,6 +17,7 @@ import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 
 import java.util.Map;
+import android.util.Log;
 
 public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
 
@@ -28,6 +29,8 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
     private String language = "en";
     private String showOnMapStoreId;
     private String getRouteStoreId;
+    private boolean shouldCreateFragment = false;
+    private FrameLayout currentView = null;
 
     ReactApplicationContext reactContext;
 
@@ -45,7 +48,9 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
      */
     @Override
     public FrameLayout createViewInstance(ThemedReactContext reactContext) {
-        return new FrameLayout(reactContext);
+        FrameLayout frameLayout = new FrameLayout(reactContext);
+        this.currentView = frameLayout;
+        return frameLayout;
     }
 
     /**
@@ -65,59 +70,89 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
             @NonNull FrameLayout root,
             String commandId,
             @Nullable ReadableArray args) {
+
         super.receiveCommand(root, commandId, args);
 
-        if (args != null && args.size() > 0) {
-            int reactNativeViewId = args.getInt(0);
+        try {
             int commandIdInt = Integer.parseInt(commandId);
-
             switch (commandIdInt) {
                 case COMMAND_CREATE:
-                    createFragment(root, reactNativeViewId);
+            
+                    if (args != null && args.size() > 0) {
+                        int reactNativeViewId = args.getInt(0);
+                        
+                        createFragment(root, reactNativeViewId);
+                    }
                     break;
-                default: {
-                }
+                default:
+                    Log.w("PoiMapViewManager", "Unknown command: " + commandIdInt);
             }
+        } catch (NumberFormatException e) {
+            Log.e("PoiMapViewManager", "Failed to parse commandId: " + commandId, e);
+        } catch (Exception e) {
+            Log.e("PoiMapViewManager", "Error in receiveCommand: " + e.getMessage(), e);
         }
     }
 
-    @ReactProp(name = "language")
-    public void setLanguage(FrameLayout view, String value) {
-        language = value;
-    }
-
-    @ReactProp(name = "showPointOnMap")
-    public void setShowPointOnMap(FrameLayout view, String value) {
-        showOnMapStoreId = value;
-    }
-
-    @ReactProp(name = "getRouteTo")
-    public void setGetRouteTo(FrameLayout view, String value) {
-        getRouteStoreId = value;
-    }
-
-    // Ignore these props for compatibility but don't use them
     @ReactProp(name = "applicationId")
     public void setApplicationId(FrameLayout view, String value) {
-        // Ignored - using hardcoded values in fragment
+        this.applicationId = value;
+        checkAndCreateFragment();
     }
 
     @ReactProp(name = "applicationSecret")
     public void setApplicationSecret(FrameLayout view, String value) {
-        // Ignored - using hardcoded values in fragment
+        this.applicationSecret = value;
+        checkAndCreateFragment();
     }
 
     @ReactProp(name = "uniqueId")
     public void setUniqueId(FrameLayout view, String value) {
-        // Ignored - using hardcoded values in fragment
+        this.uniqueId = value;
+        checkAndCreateFragment();
+    }
+
+    @ReactProp(name = "language")
+    public void setLanguage(FrameLayout view, String value) {
+        this.language = value != null ? value : "en";
+    }
+
+    @ReactProp(name = "showOnMap")
+    public void setShowOnMap(FrameLayout view, String value) {
+        this.showOnMapStoreId = value;
+    }
+
+    @ReactProp(name = "getRouteTo")
+    public void setGetRouteTo(FrameLayout view, String value) {
+        this.getRouteStoreId = value;
+    }
+
+    private void checkAndCreateFragment() {
+        if (applicationId != null && applicationSecret != null && uniqueId != null && 
+            currentView != null && !shouldCreateFragment) {
+            shouldCreateFragment = true;
+            
+            currentView.post(new Runnable() {
+                @Override
+                public void run() {
+                    createFragmentDirect(currentView);
+                }
+            });
+        }
     }
 
     /**
-     * Replace your React Native view with a custom fragment
+     * Create fragment directly when props are ready
      */
-    public void createFragment(FrameLayout root, int reactNativeViewId) {
-        ViewGroup parentView = (ViewGroup) root.findViewById(reactNativeViewId);
-        setupLayout(parentView);
+    private void createFragmentDirect(FrameLayout root) {
+        if (applicationId == null || applicationSecret == null || uniqueId == null) {
+            return;
+        }
+
+        FragmentActivity activity = (FragmentActivity) reactContext.getCurrentActivity();
+        if (activity == null || activity.isFinishing()) {
+            return;
+        }
 
         final PoiMapFragment poiMapFragment = PoiMapFragment.newInstance(
             applicationId, 
@@ -127,18 +162,59 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
             showOnMapStoreId, 
             getRouteStoreId
         );
+        
+        int viewId = root.getId();
+        if (viewId == View.NO_ID) {
+            viewId = View.generateViewId();
+            root.setId(viewId);
+        }
+        
+        activity.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(viewId, poiMapFragment, "poi_map_fragment")
+                .commitAllowingStateLoss();
+                
+        setupLayout(root);
+    }
+
+    /**
+     * Original createFragment method (fallback)
+     */
+    public void createFragment(FrameLayout root, int reactNativeViewId) {
+
+        ViewGroup parentView = (ViewGroup) root.findViewById(reactNativeViewId);
+        if (parentView == null) {
+            parentView = root;
+        }
+        setupLayout(parentView);
+
+        // Validate required props
+        if (applicationId == null || applicationSecret == null || uniqueId == null) {
+            return;
+        }
+
+        final PoiMapFragment poiMapFragment = PoiMapFragment.newInstance(
+            applicationId, 
+            applicationSecret, 
+            uniqueId, 
+            language, 
+            showOnMapStoreId, 
+            getRouteStoreId
+        );
+
         FragmentActivity activity = (FragmentActivity) reactContext.getCurrentActivity();
         if (activity != null && !activity.isFinishing()) {
             activity.getSupportFragmentManager()
                     .beginTransaction()
                     .replace(reactNativeViewId, poiMapFragment, String.valueOf(reactNativeViewId))
-                    .commit();
+                    .commitAllowingStateLoss();
         }
     }
 
     public void setupLayout(ViewGroup view) {
-        if (view == null)
+        if (view == null) {
             return;
+        }
 
         Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
             @Override

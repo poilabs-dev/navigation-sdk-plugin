@@ -27,15 +27,19 @@ import java.util.Arrays;
 import android.util.Log;
 
 public class PoiMapFragment extends Fragment {
+    
+    private static final String TAG = "PoiMapFragment";
+    
     public static PoiMapFragment newInstance(String applicationId, String applicationSecret, String uniqueId,
             String language, String showOnMapStoreId, String getRouteStoreId) {
+        
         PoiMapFragment poiMapFragment = new PoiMapFragment();
 
         Bundle args = new Bundle();
         args.putString("applicationId", applicationId);
         args.putString("applicationSecret", applicationSecret);
         args.putString("uniqueId", uniqueId);
-        args.putString("language", language);
+        args.putString("language", language != null ? language : "en");
         args.putString("showOnMapStoreId", showOnMapStoreId);
         args.putString("getRouteStoreId", getRouteStoreId);
         poiMapFragment.setArguments(args);
@@ -46,7 +50,7 @@ public class PoiMapFragment extends Fragment {
     private String applicationId;
     private String applicationSecret;
     private String uniqueId;
-    private String language;
+    private String language = "en";
     private String showOnMapStoreId;
     private String getRouteStoreId;
 
@@ -55,7 +59,6 @@ public class PoiMapFragment extends Fragment {
     private final BroadcastReceiver showOnMapReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             ArrayList<String> store_ids = intent.getStringArrayListExtra("store_ids");
             if (isStoresReady && store_ids != null && !store_ids.isEmpty()) {
                 requireActivity().runOnUiThread(new Runnable() {
@@ -71,7 +74,6 @@ public class PoiMapFragment extends Fragment {
     private final BroadcastReceiver navigateToStoreReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             String storeId = intent.getStringExtra("store_id");
             if (isStoresReady && storeId != null && !storeId.isEmpty()) {
                 requireActivity().runOnUiThread(new Runnable() {
@@ -81,7 +83,6 @@ public class PoiMapFragment extends Fragment {
                     }
                 });
             }
-
         }
     };
 
@@ -104,20 +105,17 @@ public class PoiMapFragment extends Fragment {
                     startNavigation(finalLanguage);
                 }
             });
-
         }
     };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
-        Log.d("PoiMapFragment", "=== onCreateView called ===");
         super.onCreateView(inflater, parent, savedInstanceState);
         return inflater.inflate(R.layout.fragment_poi_map, parent, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
-        Log.d("PoiMapFragment", "=== onViewCreated called ===");
         super.onViewCreated(view, savedInstanceState);
 
         if (getArguments() != null) {
@@ -126,17 +124,15 @@ public class PoiMapFragment extends Fragment {
             uniqueId = getArguments().getString("uniqueId");
             getRouteStoreId = getArguments().getString("getRouteStoreId");
             showOnMapStoreId = getArguments().getString("showOnMapStoreId");
-            language = getArguments().getString("language");
+            language = getArguments().getString("language", "en");
 
-            Log.d("PoiMapFragment", "Arguments received:");
-            Log.d("PoiMapFragment", "getRouteStoreId: " + getRouteStoreId);
-            Log.d("PoiMapFragment", "showOnMapStoreId: " + showOnMapStoreId);
-            Log.d("PoiMapFragment", "language: " + language);
+            if (applicationId == null || applicationSecret == null || uniqueId == null) {
+                return;
+            }
         } else {
-            Log.d("PoiMapFragment", "No arguments received!");
+            return;
         }
 
-        Log.d("PoiMapFragment", "Calling askLocalPermission...");
         askLocalPermission();
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(showOnMapReceiver,
@@ -166,9 +162,13 @@ public class PoiMapFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(showOnMapReceiver);
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(navigateToStoreReceiver);
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(restartMapReceiver);
+        try {
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(showOnMapReceiver);
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(navigateToStoreReceiver);
+            LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(restartMapReceiver);
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering receivers: " + e.getMessage());
+        }
         super.onDestroyView();
     }
 
@@ -177,64 +177,75 @@ public class PoiMapFragment extends Fragment {
             @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
-            askLocalPermission();
+            boolean allGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
+            }
+            if (allGranted) {
+                askLocalPermission(); // Check other permissions and start navigation
+            }
         }
     }
 
     private void startNavigation(String language) {
-        Log.d("PoiMapFragment", "=== startNavigation called ===");
-        Log.d("PoiMapFragment", "Language parameter: " + language);
-        Log.d("PoiMapFragment", "applicationId: " + applicationId);
-        Log.d("PoiMapFragment", "Context: " + (this.getContext() != null ? "present" : "null"));
-
         if (applicationId == null || applicationSecret == null || uniqueId == null) {
             return;
         }
         
-        PoiSdkConfig poiSdkConfig = new PoiSdkConfig(
-                applicationId,
-                applicationSecret,
-                uniqueId);
-        PoiNavigation.getInstance(
-                this.getContext(),
-                language,
-                poiSdkConfig).bind(new PoiNavigation.OnNavigationReady() {
-                    @Override
-                    public void onReady(MapFragment mapFragment) {
-                        if (isAdded() && getChildFragmentManager() != null) {
-                            getChildFragmentManager().beginTransaction().replace(R.id.mapLayout, mapFragment)
-                                    .commitAllowingStateLoss();
+        if (this.getContext() == null) {
+            return;
+        }
+        
+        try {
+            PoiSdkConfig poiSdkConfig = new PoiSdkConfig(
+                    applicationId,
+                    applicationSecret,
+                    uniqueId);
+                    
+            PoiNavigation.getInstance(
+                    this.getContext(),
+                    language,
+                    poiSdkConfig).bind(new PoiNavigation.OnNavigationReady() {
+                        @Override
+                        public void onReady(MapFragment mapFragment) {
+                            if (isAdded() && getChildFragmentManager() != null) {
+                                getChildFragmentManager().beginTransaction()
+                                        .replace(R.id.mapLayout, mapFragment)
+                                        .commitAllowingStateLoss();
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onStoresReady() {
-                        isStoresReady = true;
-                        if (isAdded() && getActivity() != null) {
-                            requireActivity().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (getRouteStoreId != null && !getRouteStoreId.isEmpty()) {
-                                        PoiNavigation.getInstance().navigateToStore(getRouteStoreId);
-                                    } else if (showOnMapStoreId != null && !showOnMapStoreId.isEmpty()) {
-                                        PoiNavigation.getInstance().showPointsOnMap(Arrays.asList(showOnMapStoreId));
+                        @Override
+                        public void onStoresReady() {
+                            isStoresReady = true;
+                            if (isAdded() && getActivity() != null) {
+                                requireActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (getRouteStoreId != null && !getRouteStoreId.isEmpty()) {
+                                            PoiNavigation.getInstance().navigateToStore(getRouteStoreId);
+                                        } else if (showOnMapStoreId != null && !showOnMapStoreId.isEmpty()) {
+                                            PoiNavigation.getInstance().showPointsOnMap(Arrays.asList(showOnMapStoreId));
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onError(Throwable throwable) {
+                        @Override
+                        public void onError(Throwable throwable) {
+                        }
 
-                    }
-
-                    @Override
-                    public void onStatusChanged(PLPStatus plpStatus) {
-
-                    }
-                });
-
+                        @Override
+                        public void onStatusChanged(PLPStatus plpStatus) {
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in startNavigation: " + e.getMessage(), e);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -243,9 +254,15 @@ public class PoiMapFragment extends Fragment {
             return;
         }
 
-        int hasLocalPermission = requireActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
-        if (hasLocalPermission != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[] { android.Manifest.permission.ACCESS_COARSE_LOCATION }, 1);
+        int hasLocationPermission = requireActivity().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        int hasCoarseLocationPermission = requireActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        
+        if (hasLocationPermission != PackageManager.PERMISSION_GRANTED || 
+            hasCoarseLocationPermission != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[] { 
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION 
+            }, 1);
         } else {
             if (language == null) {
                 language = "en";

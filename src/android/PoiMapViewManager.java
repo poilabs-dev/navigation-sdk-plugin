@@ -22,7 +22,6 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
 
     public static final String REACT_CLASS = "PoiMapViewManager";
     public final int COMMAND_CREATE = 1;
-    
     private String applicationId;
     private String applicationSecret;
     private String uniqueId;
@@ -65,34 +64,21 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
     public void receiveCommand(
             @NonNull FrameLayout root,
             String commandId,
-            @Nullable ReadableArray args
-    ) {
+            @Nullable ReadableArray args) {
         super.receiveCommand(root, commandId, args);
-        int reactNativeViewId = args.getInt(0);
-        int commandIdInt = Integer.parseInt(commandId);
 
-        switch (commandIdInt) {
-            case COMMAND_CREATE:
-                createFragment(root, reactNativeViewId);
-                break;
-            default: {
+        if (args != null && args.size() > 0) {
+            int reactNativeViewId = args.getInt(0);
+            int commandIdInt = Integer.parseInt(commandId);
+
+            switch (commandIdInt) {
+                case COMMAND_CREATE:
+                    createFragment(root, reactNativeViewId);
+                    break;
+                default: {
+                }
             }
         }
-    }
-
-    @ReactProp(name = "applicationId")
-    public void setApplicationId(FrameLayout view, String value) {
-        applicationId = value;
-    }
-
-    @ReactProp(name = "applicationSecret")
-    public void setApplicationSecret(FrameLayout view, String value) {
-        applicationSecret = value;
-    }
-
-    @ReactProp(name = "uniqueId")
-    public void setUniqueId(FrameLayout view, String value) {
-        uniqueId = value;
     }
 
     @ReactProp(name = "language")
@@ -100,7 +86,7 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
         language = value;
     }
 
-    @ReactProp(name = "showOnMap")
+    @ReactProp(name = "showPointOnMap")
     public void setShowPointOnMap(FrameLayout view, String value) {
         showOnMapStoreId = value;
     }
@@ -108,6 +94,22 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
     @ReactProp(name = "getRouteTo")
     public void setGetRouteTo(FrameLayout view, String value) {
         getRouteStoreId = value;
+    }
+
+    // Ignore these props for compatibility but don't use them
+    @ReactProp(name = "applicationId")
+    public void setApplicationId(FrameLayout view, String value) {
+        // Ignored - using hardcoded values in fragment
+    }
+
+    @ReactProp(name = "applicationSecret")
+    public void setApplicationSecret(FrameLayout view, String value) {
+        // Ignored - using hardcoded values in fragment
+    }
+
+    @ReactProp(name = "uniqueId")
+    public void setUniqueId(FrameLayout view, String value) {
+        // Ignored - using hardcoded values in fragment
     }
 
     /**
@@ -125,7 +127,6 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
             showOnMapStoreId, 
             getRouteStoreId
         );
-        
         FragmentActivity activity = (FragmentActivity) reactContext.getCurrentActivity();
         if (activity != null && !activity.isFinishing()) {
             activity.getSupportFragmentManager()
@@ -136,6 +137,9 @@ public class PoiMapViewManager extends ViewGroupManager<FrameLayout> {
     }
 
     public void setupLayout(ViewGroup view) {
+        if (view == null)
+            return;
+
         Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback() {
             @Override
             public void doFrame(long frameTimeNanos) {
